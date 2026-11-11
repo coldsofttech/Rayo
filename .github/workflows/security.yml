@@ -1,0 +1,57 @@
+name: Security
+
+# Static analysis (Semgrep). Findings are uploaded as SARIF, so they show up in the
+# repository's Security tab (Code scanning) next to CodeQL, and the job fails when it finds a problem.
+# This job is not part of the required `ci` check, so a new rule does not block unrelated pull
+# requests. The weekly run catches vulnerabilities published after a merge.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      # Actions are pinned to version tags on purpose (Dependabot keeps them current), so the
+      # rule that asks for commit SHAs is excluded. The rule about environment values reaching
+      # subprocess is excluded too: the only hit is SIGN_COMMAND, trusted build configuration that
+      # whoever runs the build sets on purpose (scripts/build_installer.py).
+      - name: Run Semgrep
+        run: >
+          uvx semgrep scan
+          --config p/python
+          --config p/javascript
+          --config p/react
+          --config p/owasp-top-ten
+          --config p/github-actions
+          --exclude tests
+          --exclude node_modules
+          --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+          --exclude-rule python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
+          --error
+          --sarif --output semgrep.sarif
+          .
+      - name: Upload results
+        if: always() && hashFiles('semgrep.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep

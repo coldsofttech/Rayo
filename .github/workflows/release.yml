@@ -1,0 +1,261 @@
+name: Release
+
+# Runs when a GitHub release is published:
+#
+#   build / publish        the wheel and sdist (core library and command line), then PyPI (trusted
+#                          publishing, no stored tokens)
+#   installers-*           setup.exe (Windows), deb and rpm (Linux), optionally signed
+#   github-release         SHA-256 checksums and the installers on the release, notes from CHANGELOG.md
+#   homebrew, scoop, winget  package-manager updates, each opened as a pull request
+#
+# Homebrew, Scoop and winget are off until you turn them on with repository variables (Settings >
+# Secrets and variables > Actions > Variables); see docs/releasing.md:
+#
+#   PUBLISH_HOMEBREW=true   HOMEBREW_TAP_REPO    default <owner>/homebrew-tap
+#   PUBLISH_SCOOP=true      SCOOP_BUCKET_REPO    default <owner>/scoop-bucket
+#   PUBLISH_WINGET=true     WINGET_IDENTIFIER    e.g. Publisher.Package (the first submission is manual)
+#                           WINGET_INSTALLERS_REGEX  default: the command line setup.exe
+#   SIGN_COMMAND            optional; signs one file, {file} marks where its path goes
+#
+# They need one secret, PACKAGE_MANAGER_TOKEN: a token that can create repositories and open pull
+# requests in the tap and bucket, and fork microsoft/winget-pkgs. Updates are always pull requests,
+# never pushes to a default branch.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - name: Check tag matches package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="$(uv version --short)"
+          [ "$TAG" = "v$version" ] || { echo "Tag $TAG does not match version $version"; exit 1; }
+      - run: uv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  installers-windows:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 30 # target: under 10 minutes
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read project names
+        shell: bash
+        run: python3 installer/projectinfo.py github || python installer/projectinfo.py github
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ${{ env.UI_DIR }}/.nvmrc
+          cache: npm
+          cache-dependency-path: ${{ env.UI_DIR }}/package-lock.json
+      - name: Read tool versions
+        id: tools
+        shell: bash
+        run: |
+          python -c "import tomllib, os; t = tomllib.load(open('installer/tools.toml', 'rb'))['tools']; open(os.environ['GITHUB_OUTPUT'], 'a').write(''.join(f'{k}={v}\n' for k, v in t.items()))"
+      - name: Install NSIS
+        run: choco install nsis --version "${{ steps.tools.outputs.nsis }}" --yes --no-progress
+      - run: uv sync --locked --group installer
+      - name: Build, sign (if SIGN_COMMAND is set) and smoke test the installers
+        env:
+          SIGN_COMMAND: ${{ vars.SIGN_COMMAND }}
+        run: uv run python scripts/build_installer.py cli ui --build-frontend --smoke
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installers-windows
+          path: |
+            dist/installer/*.exe
+            dist/installer/*.zip
+
+  installers-linux:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # target: under 5 minutes
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+      - name: Read tool versions
+        id: tools
+        run: |
+          python3 -c "import tomllib, os; t = tomllib.load(open('installer/tools.toml', 'rb'))['tools']; open(os.environ['GITHUB_OUTPUT'], 'a').write(''.join(f'{k}={v}\n' for k, v in t.items()))"
+      - name: Install nfpm (checksum verified)
+        env:
+          VERSION: ${{ steps.tools.outputs.nfpm }}
+        run: |
+          base="https://github.com/goreleaser/nfpm/releases/download/v${VERSION}"
+          curl -fsSLO "${base}/nfpm_${VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSLO "${base}/checksums.txt"
+          sha256sum --ignore-missing --check checksums.txt
+          tar -xzf "nfpm_${VERSION}_Linux_x86_64.tar.gz" nfpm
+          sudo install nfpm /usr/local/bin/nfpm
+      - run: uv sync --locked --group installer
+      - name: Build the packages and smoke test the executable
+        run: uv run python scripts/build_installer.py cli --smoke
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installers-linux
+          path: |
+            dist/installer/*.deb
+            dist/installer/*.rpm
+
+  github-release:
+    needs: [build, installers-windows, installers-linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # attach files to the release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv sync --locked
+      - uses: actions/download-artifact@v8
+        with:
+          path: release/
+          merge-multiple: true
+      - name: Write SHA-256 checksums
+        working-directory: release
+        run: |
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Attach the files to the release
+        run: gh release upload "$TAG" release/* --clobber --repo "$GITHUB_REPOSITORY"
+      - name: Fill in the release notes from CHANGELOG.md (only if the release has none)
+        run: |
+          if [ -z "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)" ]; then
+            uv run python scripts/update_manifests.py notes --version "${TAG#v}" --out notes.md
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          fi
+
+  homebrew:
+    if: ${{ vars.PUBLISH_HOMEBREW == 'true' }}
+    needs: [publish, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.PACKAGE_MANAGER_TOKEN }}
+      TAP: ${{ vars.HOMEBREW_TAP_REPO || format('{0}/homebrew-tap', github.repository_owner) }}
+      VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv sync --locked
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Generate the formula from the PyPI release
+        run: |
+          name="$(uv run python scripts/update_manifests.py name)"
+          sdist_sha="$(sha256sum dist/*.tar.gz | cut -d' ' -f1)"
+          uv run python scripts/update_manifests.py homebrew --version "${VERSION#v}" \
+            --sdist-sha256 "$sdist_sha" --out "Formula/${name}.rb"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+      - name: Open a pull request in the tap
+        run: |
+          gh auth setup-git
+          gh repo view "$TAP" > /dev/null 2>&1 \
+            || gh repo create "$TAP" --public --add-readme --description "Homebrew tap"
+          gh repo clone "$TAP" tap
+          cd tap
+          branch="${NAME}-${VERSION#v}"
+          git switch -c "$branch"
+          mkdir -p Formula
+          cp "../Formula/${NAME}.rb" Formula/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula
+          git commit -m "${NAME} ${VERSION#v}"
+          git push --set-upstream origin "$branch"
+          gh pr create --repo "$TAP" --head "$branch" \
+            --title "${NAME} ${VERSION#v}" --body "Update ${NAME} to ${VERSION#v}."
+
+  scoop:
+    if: ${{ vars.PUBLISH_SCOOP == 'true' }}
+    needs: github-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.PACKAGE_MANAGER_TOKEN }}
+      BUCKET: ${{ vars.SCOOP_BUCKET_REPO || format('{0}/scoop-bucket', github.repository_owner) }}
+      VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv sync --locked
+      - uses: actions/download-artifact@v8
+        with:
+          name: installers-windows
+          path: release/
+      - name: Generate the manifest for the portable zip
+        run: |
+          name="$(uv run python scripts/update_manifests.py name)"
+          zip_sha="$(sha256sum release/*.zip | cut -d' ' -f1)"
+          uv run python scripts/update_manifests.py scoop --version "${VERSION#v}" \
+            --zip-sha256 "$zip_sha" --repo "$GITHUB_REPOSITORY" --out "bucket/${name}.json"
+          echo "NAME=$name" >> "$GITHUB_ENV"
+      - name: Open a pull request in the bucket
+        run: |
+          gh auth setup-git
+          gh repo view "$BUCKET" > /dev/null 2>&1 \
+            || gh repo create "$BUCKET" --public --add-readme --description "Scoop bucket"
+          gh repo clone "$BUCKET" bucket-repo
+          cd bucket-repo
+          branch="${NAME}-${VERSION#v}"
+          git switch -c "$branch"
+          mkdir -p bucket
+          cp "../bucket/${NAME}.json" bucket/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket
+          git commit -m "${NAME} ${VERSION#v}"
+          git push --set-upstream origin "$branch"
+          gh pr create --repo "$BUCKET" --head "$branch" \
+            --title "${NAME} ${VERSION#v}" --body "Update ${NAME} to ${VERSION#v}."
+
+  winget:
+    if: ${{ vars.PUBLISH_WINGET == 'true' }}
+    needs: github-release
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      # Opens a pull request in microsoft/winget-pkgs from a fork of the token's account. The package
+      # must already exist there: the first submission is manual (docs/releasing.md).
+      - uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: ${{ vars.WINGET_IDENTIFIER }}
+          installers-regex: ${{ vars.WINGET_INSTALLERS_REGEX || '-cli-.*-setup\.exe$' }}
+          token: ${{ secrets.PACKAGE_MANAGER_TOKEN }}

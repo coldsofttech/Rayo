@@ -1,0 +1,126 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "python-cornea-ui-public-repo-template"
+dynamic = ["version"]
+description = "Python tool with a command line, an HTTP API and a native Windows UI."
+keywords = ["cli", "api", "ui"]
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "coldsofttech" }]
+classifiers = [
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Utilities",
+  "Typing :: Typed",
+]
+# What the published package (core library and command line) needs. The API and the window are not
+# published to PyPI (the installers and the source tree carry them), so their libraries are
+# dependency groups below.
+dependencies = [
+  "rich>=13.9",
+  "typer>=0.15",
+]
+
+[project.scripts]
+example-cli = "example_cli.cli:run"
+
+[project.urls]
+Homepage = "https://github.com/coldsofttech/python-cornea-ui-public-repo-template"
+Issues = "https://github.com/coldsofttech/python-cornea-ui-public-repo-template/issues"
+Changelog = "https://github.com/coldsofttech/python-cornea-ui-public-repo-template/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+# The HTTP API (src/example_api): run on its own with `python -m example_api`, and mounted by the window.
+api = [
+  "fastapi>=0.162.0",
+  "pydantic-settings>=2.16.2",
+  "uvicorn>=0.54.0",
+]
+# The Windows window (src/example_ui).
+ui = [
+  "cornea-shell>=0.1.1 ; sys_platform == 'win32'",
+]
+dev = [
+  { include-group = "api" },
+  { include-group = "ui" },
+  "cornea-shell[proxy]>=0.1.1",
+  "httpx>=0.28.1",
+  "mypy>=1.13",
+  "pre-commit>=4.0",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "pytest-xdist>=3.6",
+  "ruff>=0.8",
+  "schemathesis>=4.32.7",
+]
+installer = [
+    "hatchling>=1.33.0",
+    "pyinstaller>=6.22.3",
+]
+
+# Read by installer/projectinfo.py, so the installer scripts and the workflows need no names of
+# their own. cli is the [project.scripts] key of the command line. The window is not published, so
+# it has no script: ui is its executable name and ui-target the function it runs. api is the API
+# package.
+[tool.installer]
+cli = "example-cli"
+ui = "example-ui"
+ui-target = "example_ui.__main__:main"
+api = "example_api"
+
+[tool.hatch.version]
+path = "src/example_package/__init__.py"
+
+# `uv build` publishes the core library and the command line only. The API and the window ship in
+# the Windows installers instead. The wheel is built from the sdist, so both
+# list the same two packages.
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/example_package",
+  "src/example_cli",
+  "/README.md",
+  "/LICENSE",
+  "/CHANGELOG.md",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "src/example_package",
+  "src/example_cli",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["B", "C4", "E", "F", "I", "PT", "RUF", "S", "SIM", "T20", "UP", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S603"]  # assert and subprocess are fine in tests
+"scripts/**" = ["S603", "S607", "T201"]  # scripts call the trusted gh CLI and print progress
+
+[tool.mypy]
+strict = true
+explicit_package_bases = true
+mypy_path = "src"
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not integration' --strict-markers --cov=example_package --cov=example_cli --cov=example_api --cov=example_ui --cov-report=term-missing --cov-fail-under=80"
+markers = ["integration: slower end-to-end tests, run in CI but not by default or in pre-commit"]
+
+[tool.coverage.run]
+branch = true

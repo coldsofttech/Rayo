@@ -1,0 +1,147 @@
+name: Build installers
+
+# Builds the installers on pull requests that touch them and checks that they install, run and
+# uninstall: setup.exe files on Windows, deb and rpm packages on Linux. Nothing is published here
+# (release.yml does that for a release). Not part of the required `ci` check.
+on:
+  pull_request:
+    paths:
+      - installer/**
+      - scripts/build_installer.py
+      - src/**
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/build.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: windows (setup.exe)
+    runs-on: windows-latest
+    timeout-minutes: 20 # target: under 10 minutes
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read project names
+        shell: bash
+        run: python3 installer/projectinfo.py github || python installer/projectinfo.py github
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ${{ env.UI_DIR }}/.nvmrc
+          cache: npm
+          cache-dependency-path: ${{ env.UI_DIR }}/package-lock.json
+      - name: Read tool versions
+        id: tools
+        shell: bash
+        run: |
+          python -c "import tomllib, os; t = tomllib.load(open('installer/tools.toml', 'rb'))['tools']; open(os.environ['GITHUB_OUTPUT'], 'a').write(''.join(f'{k}={v}\n' for k, v in t.items()))"
+      - name: Install NSIS
+        run: choco install nsis --version "${{ steps.tools.outputs.nsis }}" --yes --no-progress
+      - run: uv sync --locked --group installer
+      - name: Build the installers and smoke test the executables
+        run: uv run python scripts/build_installer.py cli ui --build-frontend --smoke
+      - name: Install, run and uninstall each setup (per user)
+        shell: pwsh
+        run: |
+          foreach ($product in 'cli', 'ui') {
+            $name = if ($product -eq 'cli') { $env:CLI_NAME } else { $env:UI_NAME }
+            $setup = Get-ChildItem "dist/installer/$name-*-setup.exe" | Select-Object -First 1
+            $dir = Join-Path $env:RUNNER_TEMP "installed-$product"
+            $userPath = { [Environment]::GetEnvironmentVariable('Path', 'User') }
+
+            $install = Start-Process -Wait -PassThru -FilePath $setup.FullName -ArgumentList '/S', '/currentuser', "/D=$dir"
+            if ($install.ExitCode -ne 0) { throw "the $product setup exited with code $($install.ExitCode)" }
+            if (-not (Test-Path "$dir/$env:CLI_NAME.exe")) {
+              Get-ChildItem $dir -ErrorAction SilentlyContinue | Out-String | Write-Host
+              throw "the $product setup did not install into $dir"
+            }
+            & "$dir/$env:CLI_NAME.exe" --version
+            if ($LASTEXITCODE -ne 0) { throw "$env:CLI_NAME failed after installing $product" }
+            if ($product -eq 'ui') {
+              & "$dir/$env:UI_NAME.exe" --version
+              if ($LASTEXITCODE -ne 0) { throw "$env:UI_NAME failed after installing" }
+            }
+            if (-not (Test-Path "$dir/uninstall.exe")) { throw "no uninstaller for $product" }
+            $onPath = (& $userPath) -like "*$dir*"
+            if ($product -eq 'cli' -and -not $onPath) { throw "the CLI setup did not add itself to PATH" }
+            if ($product -eq 'ui' -and $onPath) { throw "the UI setup must not touch PATH" }
+
+            # _?= makes the uninstaller run in place, so Start-Process can wait for it.
+            Start-Process -Wait -FilePath "$dir/uninstall.exe" -ArgumentList '/S', "_?=$dir"
+            if (Test-Path "$dir/$env:CLI_NAME.exe") { throw "uninstall left the program behind ($product)" }
+            if ((& $userPath) -like "*$dir*") { throw "uninstall left PATH changed ($product)" }
+            Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
+          }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installers-windows
+          path: |
+            dist/installer/*.exe
+            dist/installer/*.zip
+          retention-days: 7
+
+  linux:
+    name: linux (deb, rpm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # target: under 5 minutes
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read project names
+        shell: bash
+        run: python3 installer/projectinfo.py github || python installer/projectinfo.py github
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+      - name: Read tool versions
+        id: tools
+        run: |
+          python3 -c "import tomllib, os; t = tomllib.load(open('installer/tools.toml', 'rb'))['tools']; open(os.environ['GITHUB_OUTPUT'], 'a').write(''.join(f'{k}={v}\n' for k, v in t.items()))"
+      - name: Install nfpm (checksum verified)
+        env:
+          VERSION: ${{ steps.tools.outputs.nfpm }}
+        run: |
+          base="https://github.com/goreleaser/nfpm/releases/download/v${VERSION}"
+          curl -fsSLO "${base}/nfpm_${VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSLO "${base}/checksums.txt"
+          sha256sum --ignore-missing --check checksums.txt
+          tar -xzf "nfpm_${VERSION}_Linux_x86_64.tar.gz" nfpm
+          sudo install nfpm /usr/local/bin/nfpm
+          nfpm --version
+      - run: uv sync --locked --group installer
+      - name: Build the packages and smoke test the executable
+        run: uv run python scripts/build_installer.py cli --smoke
+      - name: Install, run and remove the deb
+        run: |
+          sudo apt-get install --yes ./dist/installer/*.deb
+          "$CLI_NAME" --version
+          "$CLI_NAME" hello Ada
+          sudo apt-get remove --yes "$CLI_NAME"
+          hash -r  # the shell remembers where it ran the command from; forget that before checking
+          if command -v "$CLI_NAME"; then echo "$CLI_NAME is still installed"; exit 1; fi
+          if [ -e "/usr/lib/$CLI_NAME" ]; then echo "files were left behind"; exit 1; fi
+      - name: Install, run and remove the rpm (Fedora)
+        run: |
+          docker run --rm --env CLI_NAME --volume "$PWD/dist/installer:/pkgs:ro" fedora:latest bash -euxc '
+            dnf install --assumeyes /pkgs/*.rpm
+            "$CLI_NAME" --version
+            "$CLI_NAME" hello Ada
+            dnf remove --assumeyes "$CLI_NAME"
+            hash -r
+            if command -v "$CLI_NAME"; then echo "$CLI_NAME is still installed"; exit 1; fi
+          '
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installers-linux
+          path: |
+            dist/installer/*.deb
+            dist/installer/*.rpm
+          retention-days: 7

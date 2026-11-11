@@ -1,0 +1,48 @@
+name: Bug report
+description: Report something that is not working as expected
+labels: [bug]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Which part is affected?
+      options:
+        - Command line (example-cli)
+        - API
+        - UI window (example-ui)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release or commit you are using.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system and version, Python version, and how you installed it. For the UI window, also say if the Microsoft Edge WebView2 runtime is installed.
+      placeholder: |
+        Windows 11, Python 3.13, installed with uv tool install
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove any secrets or personal information first.

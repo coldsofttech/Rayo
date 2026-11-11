@@ -1,0 +1,86 @@
+name: Init
+
+# Run once from the Actions tab in a repository created from the template.
+# Replaces the template's owner and repository name, renames the example packages and commands to
+# your name (scripts/init_template.py), regenerates the lock file and generated docs, then opens a
+# pull request. The other workflows read their names from pyproject.toml, so they need no renaming.
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Short lowercase name for packages and commands, e.g. acme (acme_cli, acme-cli, ACME_API_)
+        required: true
+        type: string
+      title:
+        description: Display name of the app, e.g. Acme Studio
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  init:
+    if: github.repository != 'coldsofttech/python-cornea-ui-public-repo-template'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+
+      - name: Replace placeholders
+        env:
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          NAME: ${{ github.event.repository.name }}
+        run: |
+          git ls-files -z -- . \
+            ':(exclude).github/workflows' ':(exclude)LICENSE' ':(exclude).pre-commit-config.yaml' \
+            | xargs -0 grep -lZ -e coldsofttech -e public-repo-template \
+            | xargs -0 -r sed -i \
+                -e "s|coldsofttech/python-cornea-ui-public-repo-template|$REPO|g" \
+                -e "s|python-cornea-ui-public-repo-template|$NAME|g" \
+                -e "s|coldsofttech|$OWNER|g"
+
+      - name: Rename the example packages and commands
+        env:
+          APP_NAME: ${{ inputs.name }}
+          APP_TITLE: ${{ inputs.title }}
+        run: python3 scripts/init_template.py --name "$APP_NAME" --title "$APP_TITLE"
+
+      - name: Read project names
+        run: python3 installer/projectinfo.py github
+
+      - name: Regenerate the lock file and the generated docs
+        run: |
+          uv lock
+          uv sync
+          uv run typer "$CLI_MODULE" utils docs --name "$CLI_NAME" --output docs/cli-reference.md
+          uv run python scripts/export_openapi.py
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+          APP_NAME: ${{ inputs.name }}
+        run: |
+          git rm --quiet scripts/init_template.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c chore/init-template
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to change"
+            exit 0
+          fi
+          git commit -m "chore: initialize repository from template"
+          git push origin chore/init-template
+          gh pr create --base "$BASE" --head chore/init-template \
+            --title "chore: initialize repository from template" \
+            --body "Replaces the template owner and repository name and renames the example packages and commands to \`$APP_NAME\`. Review and merge, then:
+
+          - delete \`.github/workflows/init.yml\`
+          - replace the icon in \`src/${UI_PACKAGE}/ui/public/icon.png\`
+          - add an email to the author in \`pyproject.toml\` and your contact details in \`CODE_OF_CONDUCT.md\`
+          - apply the protections from \`docs/repo-setup.md\`"
