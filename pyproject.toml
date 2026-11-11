@@ -37,9 +37,9 @@ dependencies = [
 rayohx-cli = "rayohx_cli.cli:run"
 
 [project.urls]
-Homepage = "https://github.com/coldsofttech/Rayo"
-Issues = "https://github.com/coldsofttech/Rayo/issues"
-Changelog = "https://github.com/coldsofttech/Rayo/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/coldsofttech/RayoHX"
+Issues = "https://github.com/coldsofttech/RayoHX/issues"
+Changelog = "https://github.com/coldsofttech/RayoHX/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 # The HTTP API (src/rayohx_api): run on its own with `python -m rayohx_api`, and mounted by the window.

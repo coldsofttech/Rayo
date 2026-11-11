@@ -1,10 +1,10 @@
 # RayoHX
 
-[![CI](https://github.com/coldsofttech/Rayo/actions/workflows/ci.yml/badge.svg)](https://github.com/coldsofttech/Rayo/actions/workflows/ci.yml)
+[![CI](https://github.com/coldsofttech/RayoHX/actions/workflows/ci.yml/badge.svg)](https://github.com/coldsofttech/RayoHX/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/RayoHX)](https://pypi.org/project/RayoHX/)
 [![Python versions](https://img.shields.io/pypi/pyversions/RayoHX)](https://pypi.org/project/RayoHX/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![License](https://img.shields.io/github/license/coldsofttech/Rayo)](LICENSE)
+[![License](https://img.shields.io/github/license/coldsofttech/RayoHX)](LICENSE)
 [![Built with Cornea Shell](https://img.shields.io/badge/built%20with-Cornea%20Shell-blue)](https://github.com/coldsofttech/CorneaShell)
 [![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
@@ -58,7 +58,7 @@ Or with pipx:
 pipx install RayoHX
 ```
 
-For the desktop window, use the Windows installer. The API and the window are not part of the Python package. Or use a ready-made installer from the [releases page](https://github.com/coldsofttech/Rayo/releases), where each file has a checksum in `SHA256SUMS.txt`:
+For the desktop window, use the Windows installer. The API and the window are not part of the Python package. Or use a ready-made installer from the [releases page](https://github.com/coldsofttech/RayoHX/releases), where each file has a checksum in `SHA256SUMS.txt`:
 
 - **Windows:** the setup program installs for you or for everyone, and can add the command to your PATH. winget and Scoop are available once the maintainer enables them.
 - **Linux:** a `.deb` (Debian, Ubuntu) or `.rpm` (Fedora) package.
@@ -85,7 +85,7 @@ See the [CLI reference](docs/cli.md) for every command, option and exit code, an
 ## Development
 
 ```bash
-git clone https://github.com/coldsofttech/Rayo.git
+git clone https://github.com/coldsofttech/RayoHX.git
 cd RayoHX
 uv sync
 npm ci --prefix src/rayohx_ui/ui
