@@ -45,5 +45,5 @@ coverage.xml
 
 .temp/
 
-# Node (example_ui/ui); its build output is covered by dist/ above
+# Node (rayo_ui/ui); its build output is covered by dist/ above
 node_modules/

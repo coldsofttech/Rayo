@@ -5,8 +5,8 @@ import sys
 import pytest
 from typer.testing import CliRunner
 
-import example_package
-from example_cli.cli import app, run
+import rayo_package
+from rayo_cli.cli import app, run
 
 runner = CliRunner()
 
@@ -30,7 +30,7 @@ def test_version() -> None:
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert example_package.__version__ in result.output
+    assert rayo_package.__version__ in result.output
 
 
 def test_hello_default_name() -> None:
@@ -78,7 +78,7 @@ def test_info_shows_version() -> None:
     result = runner.invoke(app, ["info"])
 
     assert result.exit_code == 0
-    assert example_package.__version__ in result.output
+    assert rayo_package.__version__ in result.output
 
 
 def test_no_color_flag_is_accepted() -> None:
@@ -99,11 +99,11 @@ def test_info_json() -> None:
     result = runner.invoke(app, ["info", "--json"])
 
     assert result.exit_code == 0
-    assert json.loads(result.output)["version"] == example_package.__version__
+    assert json.loads(result.output)["version"] == rayo_package.__version__
 
 
 def test_quiet_from_environment() -> None:
-    result = runner.invoke(app, ["hello", "Ada"], env={"EXAMPLE_CLI_QUIET": "1"})
+    result = runner.invoke(app, ["hello", "Ada"], env={"RAYO_CLI_QUIET": "1"})
 
     assert result.exit_code == 0
     assert "Hello" not in result.output
@@ -116,8 +116,8 @@ def _boom(name: str) -> str:
 def test_unexpected_error_is_short_by_default(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["example-cli", "hello", "Ada"])
-    monkeypatch.setattr("example_cli.cli.greet", _boom)
+    monkeypatch.setattr(sys, "argv", ["rayo-cli", "hello", "Ada"])
+    monkeypatch.setattr("rayo_cli.cli.greet", _boom)
 
     with pytest.raises(SystemExit) as exit_info:
         run()
@@ -132,8 +132,8 @@ def test_unexpected_error_is_short_by_default(
 def test_unexpected_error_shows_traceback_with_verbose(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["example-cli", "--verbose", "hello", "Ada"])
-    monkeypatch.setattr("example_cli.cli.greet", _boom)
+    monkeypatch.setattr(sys, "argv", ["rayo-cli", "--verbose", "hello", "Ada"])
+    monkeypatch.setattr("rayo_cli.cli.greet", _boom)
 
     with pytest.raises(SystemExit):
         run()

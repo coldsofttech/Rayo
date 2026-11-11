@@ -31,7 +31,7 @@ export default function App() {
 
   return (
     <main>
-      <h1>Example App</h1>
+      <h1>Rayo</h1>
 
       <form
         onSubmit={(event) => {

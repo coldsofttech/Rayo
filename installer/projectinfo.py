@@ -36,7 +36,7 @@ class ProjectInfo:
     project: dict[str, Any]
     cli_script: str  # the command line executable and package name
     ui_script: str  # the window executable name
-    cli_module: str  # module holding the Typer app, e.g. example_cli.cli
+    cli_module: str  # module holding the Typer app, e.g. rayo_cli.cli
     entry_points: dict[str, str]  # executable name -> "module:function", the command and the window
     core_package: str
     cli_package: str
@@ -51,7 +51,7 @@ class ProjectInfo:
 
     @property
     def api_env_prefix(self) -> str:
-        """Prefix of the API's settings: the package name upper-cased (EXAMPLE_API_)."""
+        """Prefix of the API's settings: the package name upper-cased (RAYO_API_)."""
         return f"{self.api_package.upper()}_"
 
     def values(self) -> dict[str, str]:

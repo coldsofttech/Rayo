@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from example_api.errors import problem
+from rayo_api.errors import problem
 
 # The interactive docs load scripts and styles, so a strict policy would break them.
 DOCS_PREFIXES = ("/docs", "/redoc")

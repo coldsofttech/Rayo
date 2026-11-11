@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from itertools import count
 
-from example_package.core import greet
+from rayo_package.core import greet
 
 
 class GreetingNotFoundError(LookupError):

@@ -8,12 +8,12 @@ import typer
 from rich.table import Table
 from rich.text import Text
 
-from example_cli import output
-from example_package import __version__, greet
+from rayo_cli import output
+from rayo_package import __version__, greet
 
 app = typer.Typer(
-    name="example-cli",
-    help="Example command line tool built on [bold]example_package[/bold].",
+    name="rayo-cli",
+    help="Example command line tool built on [bold]rayo_package[/bold].",
     no_args_is_help=True,
     rich_markup_mode="rich",
     # run() reports errors briefly; Typer's own traceback would show local variables.
@@ -33,7 +33,7 @@ class State:
 
 def _show_version(value: bool) -> None:
     if value:
-        output.console.print(f"example-cli {__version__}")
+        output.console.print(f"rayo-cli {__version__}")
         raise typer.Exit
 
 
@@ -59,15 +59,15 @@ def main(
     ] = False,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose", "-v", envvar="EXAMPLE_CLI_VERBOSE", help="Show extra detail."),
+        typer.Option("--verbose", "-v", envvar="RAYO_CLI_VERBOSE", help="Show extra detail."),
     ] = False,
     quiet: Annotated[
         bool,
-        typer.Option("--quiet", "-q", envvar="EXAMPLE_CLI_QUIET", help="Only show errors."),
+        typer.Option("--quiet", "-q", envvar="RAYO_CLI_QUIET", help="Only show errors."),
     ] = False,
     no_color: Annotated[
         bool,
-        typer.Option("--no-color", envvar="EXAMPLE_CLI_NO_COLOR", help="Disable colored output."),
+        typer.Option("--no-color", envvar="RAYO_CLI_NO_COLOR", help="Disable colored output."),
     ] = False,
 ) -> None:
     """Options that apply to every command."""
@@ -109,7 +109,7 @@ def info(json_output: JsonOption = False) -> None:
     if json_output:
         output.console.print_json(data=details)
         return
-    table = Table(title="example-cli", show_header=False)
+    table = Table(title="rayo-cli", show_header=False)
     for key, value in details.items():
         table.add_row(key.capitalize(), value)
     output.console.print(table)

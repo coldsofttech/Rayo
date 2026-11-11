@@ -24,7 +24,7 @@ describe('App', () => {
       'GET /api/v1/hello/Ada': { message: 'Hello, Ada!' },
       'POST /api/bridge/app_info': {
         available: true,
-        result: { name: 'Example App', version: '1.2.3' },
+        result: { name: 'Rayo', version: '1.2.3' },
       },
     });
   });
@@ -41,7 +41,7 @@ describe('App', () => {
   it('shows the native action result', async () => {
     render(<App />);
     await userEvent.click(screen.getByRole('button', { name: 'About this app' }));
-    expect(await screen.findByText('Example App 1.2.3')).toBeInTheDocument();
+    expect(await screen.findByText('Rayo 1.2.3')).toBeInTheDocument();
   });
 
   it('shows an error when a call fails', async () => {
