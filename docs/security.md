@@ -24,6 +24,13 @@ When run alone (`python -m rayohx_api`), Cornea is absent, so the API protects i
 - **Errors:** a `500` never shows details; they go to the log with the request ID.
 - **Not included:** HTTPS, rate limiting, JWT and multi-user authentication, a database. Add them, or put the API behind a proxy, before exposing it publicly.
 
+## Download engine
+
+- **Redaction:** URLs (user info and values of keys such as `token`, `sig`, `key`), `Authorization`, `Cookie` and proxy credentials are hidden in log records and error messages by `rayohx.redaction`. Every exception message and every handler added by `configure_logging` goes through it, including formatted tracebacks.
+- **Settings:** `repr` and `as_dict()` of the settings leave out header values, cookie values and proxy passwords. Resume state must be built from `as_dict()`, never from the raw objects.
+- **Input checks:** download addresses must be absolute `http` or `https` URLs without control characters. Header names must be valid tokens, and header and cookie values cannot hold line breaks, which stops header injection. Proxies must be `http` or `https`.
+- **Files:** an existing output file is never replaced unless `overwrite` is on.
+
 ## Supply chain
 
 Dependabot covers Python, npm and Actions. `audit.yml` checks locked dependencies weekly, dependency review blocks vulnerable additions, and the lock files are committed.
