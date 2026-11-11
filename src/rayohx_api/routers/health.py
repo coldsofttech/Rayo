@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from rayo import __version__
-from rayo_api.schemas import HealthResponse, ReadyResponse
+from rayohx import __version__
+from rayohx_api.schemas import HealthResponse, ReadyResponse
 
 router = APIRouter(tags=["health"])
 

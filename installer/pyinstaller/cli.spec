@@ -1,6 +1,6 @@
 # PyInstaller spec for the command line alone: one executable, no UI libraries. Any OS.
 #
-#   rayo-cli(.exe)   the command line (console)
+#   rayohx-cli(.exe)   the command line (console)
 #   lib/                the Python runtime and the command line's dependencies
 #
 # One-folder build on purpose (no one-file build). Names, version and icon: see common.py.

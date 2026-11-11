@@ -3,13 +3,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from rayo import __version__
-from rayo_api.auth import authenticate, embedded_principal
-from rayo_api.config import get_settings
-from rayo_api.errors import register_error_handlers
-from rayo_api.logs import RequestIdMiddleware, configure_logging
-from rayo_api.routers import health, v1
-from rayo_api.security import BodyLimitMiddleware, SecurityHeadersMiddleware
+from rayohx import __version__
+from rayohx_api.auth import authenticate, embedded_principal
+from rayohx_api.config import get_settings
+from rayohx_api.errors import register_error_handlers
+from rayohx_api.logs import RequestIdMiddleware, configure_logging
+from rayohx_api.routers import health, v1
+from rayohx_api.security import BodyLimitMiddleware, SecurityHeadersMiddleware
 
 
 def create_app(*, embedded: bool = False) -> FastAPI:
@@ -17,7 +17,7 @@ def create_app(*, embedded: bool = False) -> FastAPI:
 
     ``embedded=True`` is for hosting under Cornea, whose security gate already authenticates every
     request: API-key authentication and the duplicate response headers are left out. A standalone
-    app refuses to start without an API key unless ``RAYO_API_AUTH_MODE=none``.
+    app refuses to start without an API key unless ``RAYOHX_API_AUTH_MODE=none``.
     """
     settings = get_settings()
     if not embedded:
@@ -25,9 +25,9 @@ def create_app(*, embedded: bool = False) -> FastAPI:
     configure_logging(settings.log_level)
 
     app = FastAPI(
-        title="rayo-api",
+        title="rayohx-api",
         version=__version__,
-        description="Example HTTP API built on **rayo**.",
+        description="Example HTTP API built on **rayohx**.",
         docs_url="/docs" if settings.docs_enabled else None,
         redoc_url="/redoc" if settings.docs_enabled else None,
         openapi_url="/openapi.json" if settings.docs_enabled else None,

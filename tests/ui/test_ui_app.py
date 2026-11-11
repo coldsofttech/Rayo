@@ -9,8 +9,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from rayo import __version__
-from rayo_ui import app as ui_app
+from rayohx import __version__
+from rayohx_ui import app as ui_app
 
 
 class FakeShell:
@@ -129,8 +129,8 @@ def test_api_router_is_mounted_under_cornea_prefix() -> None:
 
 
 def test_api_router_leaves_authentication_to_cornea(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("RAYO_API_AUTH_MODE", "api_key")
-    monkeypatch.setenv("RAYO_API_API_KEYS", '["s3cret"]')
+    monkeypatch.setenv("RAYOHX_API_AUTH_MODE", "api_key")
+    monkeypatch.setenv("RAYOHX_API_API_KEYS", '["s3cret"]')
     app = FastAPI()
     app.include_router(ui_app.api_router(), prefix="/api")
 

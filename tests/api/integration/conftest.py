@@ -21,13 +21,13 @@ def base_url() -> Iterator[str]:
     port = _free_port()
     env = {
         **os.environ,
-        "RAYO_API_PORT": str(port),
-        "RAYO_API_HOST": "127.0.0.1",
-        "RAYO_API_AUTH_MODE": "none",
+        "RAYOHX_API_PORT": str(port),
+        "RAYOHX_API_HOST": "127.0.0.1",
+        "RAYOHX_API_AUTH_MODE": "none",
         # The contract test reads the OpenAPI document from the running server.
-        "RAYO_API_DOCS_ENABLED": "true",
+        "RAYOHX_API_DOCS_ENABLED": "true",
     }
-    process = subprocess.Popen([sys.executable, "-m", "rayo_api"], env=env)
+    process = subprocess.Popen([sys.executable, "-m", "rayohx_api"], env=env)
     url = f"http://127.0.0.1:{port}"
     try:
         deadline = time.monotonic() + 30

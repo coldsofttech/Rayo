@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "Rayo"
+name = "RayoHX"
 dynamic = ["version"]
 description = "Python tool with a command line, an HTTP API and a native Windows UI."
 keywords = ["cli", "api", "ui"]
@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rayo-cli = "rayo_cli.cli:run"
+rayohx-cli = "rayohx_cli.cli:run"
 
 [project.urls]
 Homepage = "https://github.com/coldsofttech/Rayo"
@@ -42,13 +42,13 @@ Issues = "https://github.com/coldsofttech/Rayo/issues"
 Changelog = "https://github.com/coldsofttech/Rayo/blob/main/CHANGELOG.md"
 
 [dependency-groups]
-# The HTTP API (src/rayo_api): run on its own with `python -m rayo_api`, and mounted by the window.
+# The HTTP API (src/rayohx_api): run on its own with `python -m rayohx_api`, and mounted by the window.
 api = [
   "fastapi>=0.162.0",
   "pydantic-settings>=2.16.2",
   "uvicorn>=0.54.0",
 ]
-# The Windows window (src/rayo_ui).
+# The Windows window (src/rayohx_ui).
 ui = [
   "cornea-shell>=0.1.1 ; sys_platform == 'win32'",
 ]
@@ -75,21 +75,21 @@ installer = [
 # it has no script: ui is its executable name and ui-target the function it runs. api is the API
 # package.
 [tool.installer]
-cli = "rayo-cli"
-ui = "rayo-ui"
-ui-target = "rayo_ui.__main__:main"
-api = "rayo_api"
+cli = "rayohx-cli"
+ui = "rayohx-ui"
+ui-target = "rayohx_ui.__main__:main"
+api = "rayohx_api"
 
 [tool.hatch.version]
-path = "src/rayo/__init__.py"
+path = "src/rayohx/__init__.py"
 
 # `uv build` publishes the core library and the command line only. The API and the window ship in
 # the Windows installers instead. The wheel is built from the sdist, so both
 # list the same two packages.
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/rayo",
-  "src/rayo_cli",
+  "src/rayohx",
+  "src/rayohx_cli",
   "/README.md",
   "/LICENSE",
   "/CHANGELOG.md",
@@ -97,8 +97,8 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "src/rayo",
-  "src/rayo_cli",
+  "src/rayohx",
+  "src/rayohx_cli",
 ]
 
 [tool.ruff]
@@ -121,7 +121,7 @@ files = ["src", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not integration' --strict-markers --cov=rayo --cov=rayo_cli --cov=rayo_api --cov=rayo_ui --cov-report=term-missing --cov-fail-under=80"
+addopts = "-m 'not integration' --strict-markers --cov=rayohx --cov=rayohx_cli --cov=rayohx_api --cov=rayohx_ui --cov-report=term-missing --cov-fail-under=80"
 markers = ["integration: slower end-to-end tests, run in CI but not by default or in pre-commit"]
 
 [tool.coverage.run]

@@ -6,5 +6,5 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
-- The library is now imported as `rayo`.
+- The library is now imported as `rayohx`.
 - A license check in CI blocks GPL and AGPL dependencies.

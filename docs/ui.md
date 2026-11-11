@@ -4,10 +4,10 @@ The desktop window is hosted by [Cornea Shell](https://github.com/coldsofttech/C
 
 ## Static files, dynamic app
 
-Cornea serves the built files in `src/rayo_ui/ui/dist`, but the page is a normal single-page app that talks to Python while it runs. `ui/` holds only the interface; everything dynamic lives in `rayo_api` and `rayo`:
+Cornea serves the built files in `src/rayohx_ui/ui/dist`, but the page is a normal single-page app that talks to Python while it runs. `ui/` holds only the interface; everything dynamic lives in `rayohx_api` and `rayohx`:
 
-- **Data:** `fetch('/api/v1/...')` calls the `rayo_api` routes and gets JSON.
-- **Native actions:** `POST /api/bridge/<action>` runs a Python function registered in `rayo_ui/app.py`. The example is `app_info`. Cornea also provides file and folder pickers, opening links and platform info.
+- **Data:** `fetch('/api/v1/...')` calls the `rayohx_api` routes and gets JSON.
+- **Native actions:** `POST /api/bridge/<action>` runs a Python function registered in `rayohx_ui/app.py`. The example is `app_info`. Cornea also provides file and folder pickers, opening links and platform info.
 - **State:** lives in React in the page, and in Python behind the routes.
 
 Cornea hosts the page and the API on one address, behind a start-up token that becomes a session cookie, a host and origin check, and strict response headers. See [security](security.md).
@@ -15,23 +15,23 @@ Cornea hosts the page and the API on one address, behind a start-up token that b
 ## Layout
 
 ```text
-src/rayo_ui/__main__.py   the `rayo-ui` command: options, output, exit code
-src/rayo_ui/app.py        builds the Cornea shell: serves dist, mounts the API, registers actions
-src/rayo_ui/ui/           React + Vite (JavaScript): src/, index.html, package.json, tests
-src/rayo_ui/ui/dist/      build output, not committed; frozen into the Windows build
+src/rayohx_ui/__main__.py   the `rayohx-ui` command: options, output, exit code
+src/rayohx_ui/app.py        builds the Cornea shell: serves dist, mounts the API, registers actions
+src/rayohx_ui/ui/           React + Vite (JavaScript): src/, index.html, package.json, tests
+src/rayohx_ui/ui/dist/      build output, not committed; frozen into the Windows build
 ```
 
-`app.py` only wires things together. It must not hold business logic, and `rayo_api` and `rayo` must never import `rayo_ui`.
+`app.py` only wires things together. It must not hold business logic, and `rayohx_api` and `rayohx` must never import `rayohx_ui`.
 
 ## Running it
 
 ```bash
 uv sync
-npm ci --prefix src/rayo_ui/ui
-npm run build --prefix src/rayo_ui/ui
-uv run python -m rayo_ui                 # window
-uv run python -m rayo_ui --no-window     # prints an address for a browser
-uv run python -m rayo_ui --dev           # Vite with hot reload (needs Node)
+npm ci --prefix src/rayohx_ui/ui
+npm run build --prefix src/rayohx_ui/ui
+uv run python -m rayohx_ui                 # window
+uv run python -m rayohx_ui --no-window     # prints an address for a browser
+uv run python -m rayohx_ui --dev           # Vite with hot reload (needs Node)
 ```
 
 `--dev` starts `npm run dev` through Cornea and relaxes the content security policy for Vite. Use it only while developing.
@@ -45,10 +45,10 @@ uv run python -m rayo_ui --dev           # Vite with hot reload (needs Node)
 
 ## Packaging
 
-The window is not part of the Python package: `uv build` publishes only the core library and the command line. Users get the window from the Windows installer, which freezes `ui/dist` into the build (`installer/pyinstaller/ui.spec`) and needs no Node. The `rayo-ui` command exists in that build; from the source tree you start it with `python -m rayo_ui`.
+The window is not part of the Python package: `uv build` publishes only the core library and the command line. Users get the window from the Windows installer, which freezes `ui/dist` into the build (`installer/pyinstaller/ui.spec`) and needs no Node. The `rayohx-ui` command exists in that build; from the source tree you start it with `python -m rayohx_ui`.
 
-The window and taskbar icon is `src/rayo_ui/ui/public/icon.png` (copied into `dist` by the build), and the app id, title and version are constants at the top of `rayo_ui/app.py`. The Windows setup and the standalone executables are described in [packaging](packaging.md).
+The window and taskbar icon is `src/rayohx_ui/ui/public/icon.png` (copied into `dist` by the build), and the app id, title and version are constants at the top of `rayohx_ui/app.py`. The Windows setup and the standalone executables are described in [packaging](packaging.md).
 
 ## Tests
 
-The Python tests in `tests/ui/` replace Cornea's `Shell`, so no window opens. In `tests/ui/integration/`, a Windows-only test starts the real server without a window and needs a built `dist`, and another starts the built `rayo-ui.exe` (see [packaging](packaging.md)).
+The Python tests in `tests/ui/` replace Cornea's `Shell`, so no window opens. In `tests/ui/integration/`, a Windows-only test starts the real server without a window and needs a built `dist`, and another starts the built `rayohx-ui.exe` (see [packaging](packaging.md)).

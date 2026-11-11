@@ -1,8 +1,8 @@
-"""Start the server with ``python -m rayo_api`` (``rayo-cli api`` does the same)."""
+"""Start the server with ``python -m rayohx_api`` (``rayohx-cli api`` does the same)."""
 
 import uvicorn
 
-from rayo_api.config import get_settings
+from rayohx_api.config import get_settings
 
 
 def serve(host: str | None = None, port: int | None = None) -> None:
@@ -15,7 +15,7 @@ def serve(host: str | None = None, port: int | None = None) -> None:
     settings.check_auth()
     # log_config=None keeps uvicorn's logs on our JSON handler.
     uvicorn.run(
-        "rayo_api.main:create_app",
+        "rayohx_api.main:create_app",
         factory=True,
         host=host or settings.host,
         port=port if port is not None else settings.port,

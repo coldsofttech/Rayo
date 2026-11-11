@@ -1,6 +1,6 @@
 import pytest
 
-from rayo import GreetingNotFoundError, GreetingStore
+from rayohx import GreetingNotFoundError, GreetingStore
 
 
 def test_create_and_list() -> None:

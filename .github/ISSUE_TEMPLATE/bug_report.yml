@@ -7,9 +7,9 @@ body:
     attributes:
       label: Which part is affected?
       options:
-        - Command line (rayo-cli)
+        - Command line (rayohx-cli)
         - API
-        - UI window (rayo-ui)
+        - UI window (rayohx-ui)
         - Not sure
     validations:
       required: true

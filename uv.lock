@@ -1765,7 +1765,7 @@ wheels = [
 ]
 
 [[package]]
-name = "rayo"
+name = "rayohx"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

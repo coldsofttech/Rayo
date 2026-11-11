@@ -5,9 +5,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 
-from rayo import Greeting, GreetingNotFoundError, GreetingStore, greet
-from rayo_api.auth import Principal, authenticate
-from rayo_api.schemas import (
+from rayohx import Greeting, GreetingNotFoundError, GreetingStore, greet
+from rayohx_api.auth import Principal, authenticate
+from rayohx_api.schemas import (
     GreetingCreate,
     GreetingResponse,
     GreetingUpdate,

@@ -1,30 +1,30 @@
 # API
 
-`rayo_api` is a FastAPI app over `rayo`. It runs on its own on any system, and the same routes are mounted inside the UI window (see [UI](ui.md)). Routes only validate input, call the library and shape the response; logic stays in `rayo`.
+`rayohx_api` is a FastAPI app over `rayohx`. It runs on its own on any system, and the same routes are mounted inside the UI window (see [UI](ui.md)). Routes only validate input, call the library and shape the response; logic stays in `rayohx`.
 
 ## Running it
 
 ```bash
-cp .env.example .env              # set RAYO_API_API_KEYS, or RAYO_API_AUTH_MODE=none
-uv run python -m rayo_api      # http://127.0.0.1:8000
+cp .env.example .env              # set RAYOHX_API_API_KEYS, or RAYOHX_API_AUTH_MODE=none
+uv run python -m rayohx_api      # http://127.0.0.1:8000
 ```
 
 The app refuses to start without an API key unless authentication is switched off. This is on purpose, so the API is never open by accident. See [security](security.md).
 
 ## Settings
 
-Read from `RAYO_API_*` environment variables or a `.env` file. List values are JSON.
+Read from `RAYOHX_API_*` environment variables or a `.env` file. List values are JSON.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `RAYO_API_HOST` | `127.0.0.1` | Address to listen on |
-| `RAYO_API_PORT` | `8000` | Port to listen on |
-| `RAYO_API_LOG_LEVEL` | `info` | Log level |
-| `RAYO_API_AUTH_MODE` | `api_key` | `api_key`, or `none` for local development |
-| `RAYO_API_API_KEYS` | none | Accepted keys, sent in the `X-API-Key` header |
-| `RAYO_API_DOCS_ENABLED` | `false` | Serve `/docs`, `/redoc` and `/openapi.json` |
-| `RAYO_API_MAX_BODY_BYTES` | `1048576` | Largest request body |
-| `RAYO_API_CORS_ORIGINS` | none | Origins allowed by CORS |
+| `RAYOHX_API_HOST` | `127.0.0.1` | Address to listen on |
+| `RAYOHX_API_PORT` | `8000` | Port to listen on |
+| `RAYOHX_API_LOG_LEVEL` | `info` | Log level |
+| `RAYOHX_API_AUTH_MODE` | `api_key` | `api_key`, or `none` for local development |
+| `RAYOHX_API_API_KEYS` | none | Accepted keys, sent in the `X-API-Key` header |
+| `RAYOHX_API_DOCS_ENABLED` | `false` | Serve `/docs`, `/redoc` and `/openapi.json` |
+| `RAYOHX_API_MAX_BODY_BYTES` | `1048576` | Largest request body |
+| `RAYOHX_API_CORS_ORIGINS` | none | Origins allowed by CORS |
 
 ## Endpoints
 

@@ -1,6 +1,6 @@
 import pytest
 
-from rayo import greet
+from rayohx import greet
 
 
 def test_greet_returns_greeting() -> None:

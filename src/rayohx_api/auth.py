@@ -2,7 +2,7 @@
 
 Under Cornea the API is mounted behind its security gate and this check is switched off (see
 ``create_app(embedded=True)``). A standalone run requires an ``X-API-Key`` header unless
-``RAYO_API_AUTH_MODE=none`` is set for local development.
+``RAYOHX_API_AUTH_MODE=none`` is set for local development.
 """
 
 import secrets
@@ -12,7 +12,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 
-from rayo_api.config import AuthMode, Settings, get_settings
+from rayohx_api.config import AuthMode, Settings, get_settings
 
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 

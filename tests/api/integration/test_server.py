@@ -1,6 +1,6 @@
 import httpx
 
-import rayo
+import rayohx
 
 
 def test_health(base_url: str) -> None:
@@ -8,7 +8,7 @@ def test_health(base_url: str) -> None:
 
 
 def test_ready_reports_version(base_url: str) -> None:
-    assert httpx.get(f"{base_url}/ready").json()["version"] == rayo.__version__
+    assert httpx.get(f"{base_url}/ready").json()["version"] == rayohx.__version__
 
 
 def test_greeting_round_trip(base_url: str) -> None:

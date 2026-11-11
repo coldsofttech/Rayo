@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import rayo
+import rayohx
 
 
 def _run(*command: str) -> subprocess.CompletedProcess[str]:
@@ -10,15 +10,15 @@ def _run(*command: str) -> subprocess.CompletedProcess[str]:
 
 
 def test_module_entrypoint() -> None:
-    result = _run(sys.executable, "-m", "rayo_cli", "--version")
+    result = _run(sys.executable, "-m", "rayohx_cli", "--version")
 
     assert result.returncode == 0
-    assert rayo.__version__ in result.stdout
+    assert rayohx.__version__ in result.stdout
 
 
 def test_console_script() -> None:
     script = Path(sys.executable).parent / (
-        "rayo-cli.exe" if sys.platform == "win32" else "rayo-cli"
+        "rayohx-cli.exe" if sys.platform == "win32" else "rayohx-cli"
     )
 
     result = _run(str(script), "hello", "Ada")
@@ -28,7 +28,7 @@ def test_console_script() -> None:
 
 
 def test_errors_go_to_stderr() -> None:
-    result = _run(sys.executable, "-m", "rayo_cli", "hello", " ")
+    result = _run(sys.executable, "-m", "rayohx_cli", "hello", " ")
 
     assert result.returncode == 1
     assert "must not be empty" in result.stderr

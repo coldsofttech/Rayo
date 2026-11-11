@@ -1,8 +1,8 @@
-# Rayo
+# RayoHX
 
 [![CI](https://github.com/coldsofttech/Rayo/actions/workflows/ci.yml/badge.svg)](https://github.com/coldsofttech/Rayo/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/Rayo)](https://pypi.org/project/Rayo/)
-[![Python versions](https://img.shields.io/pypi/pyversions/Rayo)](https://pypi.org/project/Rayo/)
+[![PyPI](https://img.shields.io/pypi/v/RayoHX)](https://pypi.org/project/RayoHX/)
+[![Python versions](https://img.shields.io/pypi/pyversions/RayoHX)](https://pypi.org/project/RayoHX/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/github/license/coldsofttech/Rayo)](LICENSE)
 [![Built with Cornea Shell](https://img.shields.io/badge/built%20with-Cornea%20Shell-blue)](https://github.com/coldsofttech/CorneaShell)
@@ -20,7 +20,7 @@ A ready-to-use starting point for public Python tools that come with a command l
 ## What you get
 
 - A command line with `--help`, `--version`, `--verbose`, `--quiet`, `--no-color` and shell completion
-- A desktop window (Windows) with an example React app that talks to Python, started with `rayo-ui`
+- A desktop window (Windows) with an example React app that talks to Python, started with `rayohx-ui`
 - An HTTP API you can also run on its own, on any system
 - A separate typed library, so your logic is reused by the command line, the API and the window
 - Fast, reproducible setup with [uv](https://docs.astral.sh/uv/)
@@ -46,16 +46,16 @@ A ready-to-use starting point for public Python tools that come with a command l
 
 ## Installation
 
-The Python package gives you the command line (`rayo-cli`). Requires Python 3.11 or newer. The recommended way to install a tool is in its own isolated environment:
+The Python package gives you the command line (`rayohx-cli`). Requires Python 3.11 or newer. The recommended way to install a tool is in its own isolated environment:
 
 ```bash
-uv tool install Rayo
+uv tool install RayoHX
 ```
 
 Or with pipx:
 
 ```bash
-pipx install Rayo
+pipx install RayoHX
 ```
 
 For the desktop window, use the Windows installer. The API and the window are not part of the Python package. Or use a ready-made installer from the [releases page](https://github.com/coldsofttech/Rayo/releases), where each file has a checksum in `SHA256SUMS.txt`:
@@ -71,12 +71,12 @@ The window needs Windows 10 or 11 with the Microsoft Edge WebView2 runtime, whic
 ## Usage
 
 ```console
-$ rayo-cli hello Ada
+$ rayohx-cli hello Ada
 Hello, Ada!
-$ rayo-ui
+$ rayohx-ui
 ```
 
-`rayo-ui` opens the app window. `rayo-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
+`rayohx-ui` opens the app window. `rayohx-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
 
 See the [CLI reference](docs/cli.md) for every command, option and exit code, and the [API guide](docs/api.md) to run the API on its own.
 
@@ -86,11 +86,11 @@ See the [CLI reference](docs/cli.md) for every command, option and exit code, an
 
 ```bash
 git clone https://github.com/coldsofttech/Rayo.git
-cd Rayo
+cd RayoHX
 uv sync
-npm ci --prefix src/rayo_ui/ui
-npm run build --prefix src/rayo_ui/ui
-uv run python -m rayo_ui
+npm ci --prefix src/rayohx_ui/ui
+npm run build --prefix src/rayohx_ui/ui
+uv run python -m rayohx_ui
 ```
 
 See the [development guide](docs/development.md) for testing, hot reload, linting and releasing.

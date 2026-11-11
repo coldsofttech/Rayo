@@ -6,14 +6,14 @@ from pathlib import Path
 import httpx
 import pytest
 
-from rayo_ui.app import build_shell
+from rayohx_ui.app import build_shell
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(sys.platform != "win32", reason="Cornea Shell is Windows only"),
 ]
 
-DIST = Path(__file__).parents[3] / "src" / "rayo_ui" / "ui" / "dist"
+DIST = Path(__file__).parents[3] / "src" / "rayohx_ui" / "ui" / "dist"
 
 
 @pytest.mark.skipif(not DIST.is_dir(), reason="build the frontend first: npm ci && npm run build")

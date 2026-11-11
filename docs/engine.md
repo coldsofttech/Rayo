@@ -1,6 +1,6 @@
 # Engine design
 
-The HLS engine lives in the `rayo` package. The command line, the API and the desktop window all call it, so download logic exists in one place. The engine never prints, exits or reads global state: it takes typed configuration and reports through events.
+The HLS engine lives in the `rayohx` package. The command line, the API and the desktop window all call it, so download logic exists in one place. The engine never prints, exits or reads global state: it takes typed configuration and reports through events.
 
 ## Responsibilities
 
@@ -32,13 +32,13 @@ flowchart TD
 
 ## Package layout
 
-New modules are added phase by phase under `src/rayo/`:
+New modules are added phase by phase under `src/rayohx/`:
 
 | Module | Contents |
 | --- | --- |
 | `models` | Frozen dataclasses for playlists, tracks, segments, requests, progress and results |
 | `config` | `DownloadConfig`, `NetworkConfig`, `ProxyConfig`, `OutputConfig`, `StorageConfig` |
-| `errors` | The `RayoError` hierarchy, with credentials redacted |
+| `errors` | The `RayoHXError` hierarchy, with credentials redacted |
 | `events` | `DownloadState` and `DownloadEvent` |
 | `logs` | Standard `logging` setup and the redaction filter |
 | `playlist`, `selection`, `http`, `storage`, `scheduler`, `crypto`, `output` | The parts above |
@@ -47,14 +47,14 @@ The greeting example (`core.py`, `greetings.py`) is temporary. It stays only unt
 
 ## Output without FFmpeg
 
-Rayo does its own container handling and never bundles FFmpeg.
+RayoHX does its own container handling and never bundles FFmpeg.
 
 1. MPEG-TS segments are joined into a `.ts` file, and fMP4 segments (init segment plus fragments) into a fragmented `.mp4`. Neither step decodes anything.
 2. A native muxer turns MPEG-TS into fragmented MP4 for H.264 and HEVC video with AAC, AC-3, E-AC-3 or MP3 audio. It is written from the public specifications.
 3. WebVTT subtitles are written as a sidecar file.
-4. For anything else, Rayo uses an FFmpeg already installed on the machine, when found on `PATH`. It is a prerequisite for those cases only, and it runs as a separate program, never linked or shipped.
+4. For anything else, RayoHX uses an FFmpeg already installed on the machine, when found on `PATH`. It is a prerequisite for those cases only, and it runs as a separate program, never linked or shipped.
 
-Rayo remuxes and never transcodes. When no route exists, it raises `OutputFormatError` and says which stream or codec is the problem.
+RayoHX remuxes and never transcodes. When no route exists, it raises `OutputFormatError` and says which stream or codec is the problem.
 
 ## Licensing
 

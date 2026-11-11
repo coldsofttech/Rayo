@@ -25,7 +25,7 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: npm
-    directory: /src/rayo_ui/ui
+    directory: /src/rayohx_ui/ui
     schedule:
       interval: weekly
     cooldown:
