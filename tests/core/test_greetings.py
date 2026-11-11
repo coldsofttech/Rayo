@@ -1,6 +1,6 @@
 import pytest
 
-from example_package import GreetingNotFoundError, GreetingStore
+from rayo_package import GreetingNotFoundError, GreetingStore
 
 
 def test_create_and_list() -> None:

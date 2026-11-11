@@ -1,14 +1,14 @@
 import pytest
 import uvicorn
 
-from example_api import __main__ as api_main
-from example_api.config import get_settings
+from rayo_api import __main__ as api_main
+from rayo_api.config import get_settings
 
 
 def test_serve_uses_settings_unless_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict[str, object]] = []
     monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: calls.append(kwargs))
-    monkeypatch.setenv("EXAMPLE_API_PORT", "9001")
+    monkeypatch.setenv("RAYO_API_PORT", "9001")
     get_settings.cache_clear()
 
     api_main.serve()
@@ -20,8 +20,8 @@ def test_serve_uses_settings_unless_overridden(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_serve_refuses_to_start_without_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("EXAMPLE_API_AUTH_MODE", "api_key")
+    monkeypatch.setenv("RAYO_API_AUTH_MODE", "api_key")
     get_settings.cache_clear()
 
-    with pytest.raises(ValueError, match="EXAMPLE_API_API_KEYS"):
+    with pytest.raises(ValueError, match="RAYO_API_API_KEYS"):
         api_main.serve()

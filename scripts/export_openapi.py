@@ -17,7 +17,7 @@ import projectinfo  # noqa: E402
 
 INFO = projectinfo.load()
 # The contract does not depend on settings; avoid needing an API key to build the app. The
-# settings prefix is the API package's name upper-cased (EXAMPLE_API_ for example_api).
+# settings prefix is the API package's name upper-cased (RAYO_API_ for rayo_api).
 os.environ.setdefault(f"{INFO.api_env_prefix}AUTH_MODE", "none")
 os.environ[f"{INFO.api_env_prefix}DOCS_ENABLED"] = "true"
 

@@ -1,4 +1,4 @@
-"""Wire Cornea Shell to ``example_api`` and ``example_package``. It holds no business logic.
+"""Wire Cornea Shell to ``rayo_api`` and ``rayo_package``. It holds no business logic.
 
 Cornea serves the built frontend, gates every mounted router behind its session cookie and
 registers the native actions. It never prints or exits; the CLI shows errors and picks exit codes.
@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter
 
-from example_api.config import AuthMode, get_settings
-from example_api.routers import v1
-from example_package import __version__
+from rayo_api.config import AuthMode, get_settings
+from rayo_api.routers import v1
+from rayo_package import __version__
 
 if TYPE_CHECKING:
     from cornea import Shell
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 UI_DIR = Path(__file__).parent / "ui"
 DEV_URL = "http://localhost:5173"
 DEV_COMMAND = "npm run dev"
-APP_ID = "com.example.app"
-TITLE = "Example App"
+APP_ID = "com.rayo.app"
+TITLE = "Rayo"
 VERSION = __version__
 # Window and taskbar icon: public/icon.png is copied into dist by the build. Replace it with yours.
 ICON = UI_DIR / "dist" / "icon.png"
@@ -34,12 +34,12 @@ class UiUnavailableError(RuntimeError):
 
 
 def api_router() -> APIRouter:
-    """Return the ``example_api`` routes as Cornea mounts them: ``/api/v1/...``.
+    """Return the ``rayo_api`` routes as Cornea mounts them: ``/api/v1/...``.
 
     Cornea adds the ``/api`` prefix itself and its session gate has already authenticated the
     request, so the standalone API key check is switched off for this process.
     """
-    os.environ["EXAMPLE_API_AUTH_MODE"] = AuthMode.NONE
+    os.environ["RAYO_API_AUTH_MODE"] = AuthMode.NONE
     get_settings.cache_clear()
     router = APIRouter(prefix="/v1")
     router.include_router(v1.router)
@@ -74,7 +74,7 @@ def build_shell(*, dev: bool = False, window: bool = True) -> "Shell":
         source = Process(DEV_COMMAND, url=DEV_URL, cwd=UI_DIR, mode="proxy")
         security = Security(csp=DEV_CSP)
     else:
-        source = Static(package="example_ui", package_path="ui/dist")
+        source = Static(package="rayo_ui", package_path="ui/dist")
 
     shell = Shell(
         source,

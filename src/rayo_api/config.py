@@ -1,4 +1,4 @@
-"""Settings, read from ``EXAMPLE_API_*`` environment variables or a ``.env`` file."""
+"""Settings, read from ``RAYO_API_*`` environment variables or a ``.env`` file."""
 
 from enum import StrEnum
 from functools import lru_cache
@@ -18,7 +18,7 @@ class AuthMode(StrEnum):
 class Settings(BaseSettings):
     """Application settings. List values are given as JSON, for example ``["a", "b"]``."""
 
-    model_config = SettingsConfigDict(env_prefix="EXAMPLE_API_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="RAYO_API_", env_file=".env", extra="ignore")
 
     host: str = "127.0.0.1"
     port: int = 8000
@@ -34,8 +34,8 @@ class Settings(BaseSettings):
         """Fail at startup, not on the first request, if authentication is misconfigured."""
         if self.auth_mode is AuthMode.API_KEY and not self.api_keys:
             raise ValueError(
-                "EXAMPLE_API_API_KEYS is required; "
-                "set EXAMPLE_API_AUTH_MODE=none to disable authentication for local development"
+                "RAYO_API_API_KEYS is required; "
+                "set RAYO_API_AUTH_MODE=none to disable authentication for local development"
             )
         return self
 

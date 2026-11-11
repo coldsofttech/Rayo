@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from example_api.schemas import HealthResponse, ReadyResponse
-from example_package import __version__
+from rayo_api.schemas import HealthResponse, ReadyResponse
+from rayo_package import __version__
 
 router = APIRouter(tags=["health"])
 

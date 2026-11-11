@@ -52,16 +52,16 @@ repos:
         pass_filenames: false
       - id: eslint
         name: eslint (ui)
-        entry: npm --prefix src/example_ui/ui run lint
+        entry: npm --prefix src/rayo_ui/ui run lint
         language: system
-        files: ^src/example_ui/ui/.*\.(js|jsx)$
+        files: ^src/rayo_ui/ui/.*\.(js|jsx)$
         pass_filenames: false
       - id: prettier
         name: prettier (ui)
-        entry: npm --prefix src/example_ui/ui run format:check
+        entry: npm --prefix src/rayo_ui/ui run format:check
         language: system
-        files: ^src/example_ui/ui/
-        exclude: ^src/example_ui/ui/package-lock\.json$
+        files: ^src/rayo_ui/ui/
+        exclude: ^src/rayo_ui/ui/package-lock\.json$
         pass_filenames: false
       - id: pytest
         name: pytest

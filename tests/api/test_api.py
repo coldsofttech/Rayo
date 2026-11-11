@@ -3,8 +3,8 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from example_api.config import get_settings
-from example_api.main import create_app
+from rayo_api.config import get_settings
+from rayo_api.main import create_app
 
 
 @pytest.fixture
@@ -106,7 +106,7 @@ def test_docs_are_hidden_by_default(client: TestClient) -> None:
 
 
 def test_docs_can_be_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("EXAMPLE_API_DOCS_ENABLED", "true")
+    monkeypatch.setenv("RAYO_API_DOCS_ENABLED", "true")
     get_settings.cache_clear()
 
     docs = TestClient(create_app())
@@ -116,7 +116,7 @@ def test_docs_can_be_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_oversized_body_is_413(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("EXAMPLE_API_MAX_BODY_BYTES", "10")
+    monkeypatch.setenv("RAYO_API_MAX_BODY_BYTES", "10")
     get_settings.cache_clear()
 
     response = TestClient(create_app()).post("/api/v1/greetings", json={"name": "A" * 50})
@@ -139,7 +139,7 @@ def test_unexpected_errors_do_not_leak_details() -> None:
 
 
 def test_cors_allows_configured_origin(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("EXAMPLE_API_CORS_ORIGINS", '["https://app.example.com"]')
+    monkeypatch.setenv("RAYO_API_CORS_ORIGINS", '["https://app.example.com"]')
     get_settings.cache_clear()
 
     response = TestClient(create_app()).get(
@@ -152,8 +152,8 @@ def test_cors_allows_configured_origin(monkeypatch: pytest.MonkeyPatch) -> None:
 class TestAuth:
     @pytest.fixture(autouse=True)
     def _api_key_mode(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("EXAMPLE_API_AUTH_MODE", "api_key")
-        monkeypatch.setenv("EXAMPLE_API_API_KEYS", '["s3cret"]')
+        monkeypatch.setenv("RAYO_API_AUTH_MODE", "api_key")
+        monkeypatch.setenv("RAYO_API_API_KEYS", '["s3cret"]')
         get_settings.cache_clear()
 
     def test_whoami_needs_a_valid_key(self) -> None:
@@ -170,14 +170,14 @@ class TestAuth:
     def test_standalone_app_refuses_to_start_without_a_key(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.delenv("EXAMPLE_API_API_KEYS")
+        monkeypatch.delenv("RAYO_API_API_KEYS")
         get_settings.cache_clear()
 
-        with pytest.raises(ValueError, match="EXAMPLE_API_API_KEYS"):
+        with pytest.raises(ValueError, match="RAYO_API_API_KEYS"):
             create_app()
 
     def test_embedded_app_trusts_cornea_instead(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("EXAMPLE_API_API_KEYS")
+        monkeypatch.delenv("RAYO_API_API_KEYS")
         get_settings.cache_clear()
 
         response = TestClient(create_app(embedded=True)).get("/api/v1/whoami")
@@ -185,7 +185,7 @@ class TestAuth:
         assert response.json() == {"subject": "cornea-session", "method": "cornea"}
 
     def test_auth_can_be_switched_off(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("EXAMPLE_API_AUTH_MODE", "none")
+        monkeypatch.setenv("RAYO_API_AUTH_MODE", "none")
         get_settings.cache_clear()
 
         response = TestClient(create_app()).get("/api/v1/whoami")

@@ -1,6 +1,6 @@
-"""Start the UI with ``example-ui`` or ``python -m example_ui``.
+"""Start the UI with ``rayo-ui`` or ``python -m rayo_ui``.
 
-This is the one place in ``example_ui`` that shows output and sets the exit code, so the rest of
+This is the one place in ``rayo_ui`` that shows output and sets the exit code, so the rest of
 the package stays free of both and the UI executable can be built from ``main``.
 """
 
@@ -8,8 +8,8 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from example_package import __version__
-from example_ui.app import UiUnavailableError, run_ui
+from rayo_package import __version__
+from rayo_ui.app import UiUnavailableError, run_ui
 
 
 def _show_ready(line: str) -> None:
@@ -19,8 +19,8 @@ def _show_ready(line: str) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the UI and return the exit code."""
-    parser = argparse.ArgumentParser(prog="example-ui", description="Open the app.")
-    parser.add_argument("--version", action="version", version=f"example-ui {__version__}")
+    parser = argparse.ArgumentParser(prog="rayo-ui", description="Open the app.")
+    parser.add_argument("--version", action="version", version=f"rayo-ui {__version__}")
     parser.add_argument(
         "--dev", action="store_true", help="run the Vite dev server for hot reload (needs Node)"
     )

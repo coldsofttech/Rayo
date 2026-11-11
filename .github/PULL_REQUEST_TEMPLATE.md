@@ -13,4 +13,4 @@
 - [ ] README or docs are updated if behavior changed
 - [ ] No secrets or personal data are included
 - [ ] API changes: `docs/openapi.json` is regenerated and `docs/api.md` is updated
-- [ ] UI changes: `npm run lint`, `npm test` and `npm run build` pass in `src/example_ui/ui`
+- [ ] UI changes: `npm run lint`, `npm test` and `npm run build` pass in `src/rayo_ui/ui`

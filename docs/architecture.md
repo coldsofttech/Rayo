@@ -29,11 +29,11 @@ flowchart LR
 ## Source layout
 
 ```text
-src/example_package/   typed library: all the logic, never prints or exits
-src/example_cli/       Typer + Rich command line over the library
-src/example_api/       FastAPI app over the library: routers, schemas, errors, settings
-src/example_ui/        Cornea Shell wiring and the `example-ui` command
-src/example_ui/ui/     React + Vite frontend (JavaScript); `dist/` is built, not committed
+src/rayo_package/   typed library: all the logic, never prints or exits
+src/rayo_cli/       Typer + Rich command line over the library
+src/rayo_api/       FastAPI app over the library: routers, schemas, errors, settings
+src/rayo_ui/        Cornea Shell wiring and the `rayo-ui` command
+src/rayo_ui/ui/     React + Vite frontend (JavaScript); `dist/` is built, not committed
 installer/               PyInstaller specs, NSIS scripts, nfpm config and pinned tool versions
 scripts/                 repository settings, OpenAPI export, installer build and manifest generation
 tests/<component>/     pytest unit tests with coverage (80% minimum), one folder each for core, cli, api and ui
@@ -48,30 +48,30 @@ The version lives in one place, `__version__` in the package, and Hatchling read
 
 ```mermaid
 flowchart LR
-    U[User] --> C[example_cli]
-    C -->|calls| L[example_package]
+    U[User] --> C[rayo_cli]
+    C -->|calls| L[rayo_package]
     C --> O[Rich consoles]
 ```
 
-- `example_cli` parses arguments with Typer, calls `example_package`, and writes all output through the shared Rich consoles: data to stdout, messages and errors to stderr.
-- `example_package` holds the logic. It raises exceptions instead of printing or exiting, so other front ends can reuse it.
-- The console script `example-cli` and `python -m example_cli` both enter through `example_cli.cli:app`. Both packages ship in one wheel and share the version in `example_package.__version__`.
+- `rayo_cli` parses arguments with Typer, calls `rayo_package`, and writes all output through the shared Rich consoles: data to stdout, messages and errors to stderr.
+- `rayo_package` holds the logic. It raises exceptions instead of printing or exiting, so other front ends can reuse it.
+- The console script `rayo-cli` and `python -m rayo_cli` both enter through `rayo_cli.cli:app`. Both packages ship in one wheel and share the version in `rayo_package.__version__`.
 
 ## UI and API layers
 
 ```mermaid
 flowchart LR
     W[Window: React] -->|fetch| S[Cornea Shell]
-    S -->|mounts| A[example_api]
-    S -->|actions| U[example_ui]
+    S -->|mounts| A[rayo_api]
+    S -->|actions| U[rayo_ui]
     B[Browser, other client] -->|HTTP| A
-    A -->|calls| L[example_package]
+    A -->|calls| L[rayo_package]
     U -->|calls| L
 ```
 
-- `example_api` validates input, calls `example_package` and shapes responses. It runs on its own on any system, or is mounted inside Cornea.
-- `example_ui` only wires Cornea to the API and the library, and holds the `example-ui` entry point. It is the one place there that shows output and sets exit codes.
-- `example_package` and `example_api` never import `example_ui`, and `example_package` never imports `example_api`. The Windows-only dependency (`cornea-shell`) is imported lazily.
+- `rayo_api` validates input, calls `rayo_package` and shapes responses. It runs on its own on any system, or is mounted inside Cornea.
+- `rayo_ui` only wires Cornea to the API and the library, and holds the `rayo-ui` entry point. It is the one place there that shows output and sets exit codes.
+- `rayo_package` and `rayo_api` never import `rayo_ui`, and `rayo_package` never imports `rayo_api`. The Windows-only dependency (`cornea-shell`) is imported lazily.
 
 ## Workflows
 

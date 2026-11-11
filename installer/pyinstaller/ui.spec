@@ -2,13 +2,13 @@
 #
 # Two executables in one folder, sharing one lib/ (the Python runtime and every dependency):
 #
-#   example-cli.exe   the command line (console)
-#   example-ui.exe    the desktop window (no console); the React frontend (example_ui/ui/dist)
+#   rayo-cli.exe   the command line (console)
+#   rayo-ui.exe    the desktop window (no console); the React frontend (rayo_ui/ui/dist)
 #                     is frozen into lib/
 #
 # Each executable carries its own pure-Python modules; native libraries and data files are
 # collected once, in lib/. One-folder build on purpose (no one-file build). Names, version and
-# icon: see common.py. Build the frontend first (npm ci && npm run build in src/example_ui/ui):
+# icon: see common.py. Build the frontend first (npm ci && npm run build in src/rayo_ui/ui):
 #   uv sync --group installer
 #   uv run pyinstaller installer/pyinstaller/ui.spec --noconfirm \
 #       --distpath build/installer --workpath build/installer-work/ui

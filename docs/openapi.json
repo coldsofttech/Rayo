@@ -197,8 +197,8 @@
     }
   },
   "info": {
-    "description": "Example HTTP API built on **example_package**.",
-    "title": "example-api",
+    "description": "Example HTTP API built on **rayo_package**.",
+    "title": "rayo-api",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
