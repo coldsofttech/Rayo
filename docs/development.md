@@ -3,7 +3,7 @@
 ## Layout
 
 ```text
-src/rayo_package/   library: all the logic, never prints or exits (typed)
+src/rayo/           library: all the logic, never prints or exits (typed)
 src/rayo_cli/       Typer + Rich command line: parses input, calls the library, shows output
 src/rayo_api/       FastAPI app: routers, schemas, errors, settings (see api.md)
 src/rayo_ui/        Cornea Shell wiring and the `rayo-ui` command (see ui.md)
@@ -16,7 +16,7 @@ pyproject.toml         metadata, dependencies and tool configuration
 uv.lock                locked dependencies (commit this file)
 ```
 
-The example names are `rayo_package` (library), `rayo_cli` (command line package), `rayo_api`, `rayo_ui`, and the commands `rayo-cli` and `rayo-ui`. After creating a repo from this template, run the **Init** workflow with a short lowercase `name` (for example `acme`) and a display `title` (for example "Acme Studio"). It opens a pull request that:
+The example names are `rayo` (library), `rayo_cli` (command line package), `rayo_api`, `rayo_ui`, and the commands `rayo-cli` and `rayo-ui`. After creating a repo from this template, run the **Init** workflow with a short lowercase `name` (for example `acme`) and a display `title` (for example "Acme Studio"). It opens a pull request that:
 
 - replaces the owner and repository name;
 - renames the packages (`acme_package`, `acme_cli`, `acme_api`, `acme_ui`), the commands (`acme-cli`, `acme-ui`), the settings prefix (`ACME_API_`) and the app id, and replaces "Rayo" with your title;

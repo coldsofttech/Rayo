@@ -8,7 +8,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 
-from rayo_package import __version__
+from rayo import __version__
 from rayo_ui.app import UiUnavailableError, run_ui
 
 

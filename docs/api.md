@@ -1,6 +1,6 @@
 # API
 
-`rayo_api` is a FastAPI app over `rayo_package`. It runs on its own on any system, and the same routes are mounted inside the UI window (see [UI](ui.md)). Routes only validate input, call the library and shape the response; logic stays in `rayo_package`.
+`rayo_api` is a FastAPI app over `rayo`. It runs on its own on any system, and the same routes are mounted inside the UI window (see [UI](ui.md)). Routes only validate input, call the library and shape the response; logic stays in `rayo`.
 
 ## Running it
 

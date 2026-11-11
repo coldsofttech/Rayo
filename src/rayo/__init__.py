@@ -2,7 +2,7 @@
 
 __version__ = "0.1.0"
 
-from rayo_package.core import greet
-from rayo_package.greetings import Greeting, GreetingNotFoundError, GreetingStore
+from rayo.core import greet
+from rayo.greetings import Greeting, GreetingNotFoundError, GreetingStore
 
 __all__ = ["Greeting", "GreetingNotFoundError", "GreetingStore", "__version__", "greet"]

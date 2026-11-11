@@ -1,6 +1,6 @@
 # `rayo-cli`
 
-Example command line tool built on <span style="font-weight: bold">rayo_package</span>.
+Example command line tool built on <span style="font-weight: bold">rayo</span>.
 
 **Usage**:
 

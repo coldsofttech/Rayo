@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from rayo_package import __version__
+from rayo import __version__
 from rayo_ui import app as ui_app
 
 

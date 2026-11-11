@@ -197,7 +197,7 @@
     }
   },
   "info": {
-    "description": "Example HTTP API built on **rayo_package**.",
+    "description": "Example HTTP API built on **rayo**.",
     "title": "rayo-api",
     "version": "0.1.0"
   },

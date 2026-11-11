@@ -3,13 +3,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from rayo import __version__
 from rayo_api.auth import authenticate, embedded_principal
 from rayo_api.config import get_settings
 from rayo_api.errors import register_error_handlers
 from rayo_api.logs import RequestIdMiddleware, configure_logging
 from rayo_api.routers import health, v1
 from rayo_api.security import BodyLimitMiddleware, SecurityHeadersMiddleware
-from rayo_package import __version__
 
 
 def create_app(*, embedded: bool = False) -> FastAPI:
@@ -27,7 +27,7 @@ def create_app(*, embedded: bool = False) -> FastAPI:
     app = FastAPI(
         title="rayo-api",
         version=__version__,
-        description="Example HTTP API built on **rayo_package**.",
+        description="Example HTTP API built on **rayo**.",
         docs_url="/docs" if settings.docs_enabled else None,
         redoc_url="/redoc" if settings.docs_enabled else None,
         openapi_url="/openapi.json" if settings.docs_enabled else None,

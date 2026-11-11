@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 
+from rayo import Greeting, GreetingNotFoundError, GreetingStore, greet
 from rayo_api.auth import Principal, authenticate
 from rayo_api.schemas import (
     GreetingCreate,
@@ -13,7 +14,6 @@ from rayo_api.schemas import (
     HelloResponse,
     WhoAmIResponse,
 )
-from rayo_package import Greeting, GreetingNotFoundError, GreetingStore, greet
 
 router = APIRouter(tags=["v1"])
 

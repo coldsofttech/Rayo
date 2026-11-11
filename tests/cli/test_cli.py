@@ -5,7 +5,7 @@ import sys
 import pytest
 from typer.testing import CliRunner
 
-import rayo_package
+import rayo
 from rayo_cli.cli import app, run
 
 runner = CliRunner()
@@ -30,7 +30,7 @@ def test_version() -> None:
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert rayo_package.__version__ in result.output
+    assert rayo.__version__ in result.output
 
 
 def test_hello_default_name() -> None:
@@ -78,7 +78,7 @@ def test_info_shows_version() -> None:
     result = runner.invoke(app, ["info"])
 
     assert result.exit_code == 0
-    assert rayo_package.__version__ in result.output
+    assert rayo.__version__ in result.output
 
 
 def test_no_color_flag_is_accepted() -> None:
@@ -99,7 +99,7 @@ def test_info_json() -> None:
     result = runner.invoke(app, ["info", "--json"])
 
     assert result.exit_code == 0
-    assert json.loads(result.output)["version"] == rayo_package.__version__
+    assert json.loads(result.output)["version"] == rayo.__version__
 
 
 def test_quiet_from_environment() -> None:

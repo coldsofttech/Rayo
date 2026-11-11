@@ -1,4 +1,4 @@
-"""Wire Cornea Shell to ``rayo_api`` and ``rayo_package``. It holds no business logic.
+"""Wire Cornea Shell to ``rayo_api`` and ``rayo``. It holds no business logic.
 
 Cornea serves the built frontend, gates every mounted router behind its session cookie and
 registers the native actions. It never prints or exits; the CLI shows errors and picks exit codes.
@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter
 
+from rayo import __version__
 from rayo_api.config import AuthMode, get_settings
 from rayo_api.routers import v1
-from rayo_package import __version__
 
 if TYPE_CHECKING:
     from cornea import Shell

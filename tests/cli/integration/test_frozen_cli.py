@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-import rayo_package
+import rayo
 from tests.frozen import locate, skip_if_blocked
 
 # cli.spec builds the command line alone; ui.spec builds it again beside the window.
@@ -33,7 +33,7 @@ def test_reports_its_version(folder: str) -> None:
     result = _run(locate(folder, "rayo-cli"), "--version")
 
     assert result.returncode == 0
-    assert rayo_package.__version__ in result.stdout
+    assert rayo.__version__ in result.stdout
 
 
 @pytest.mark.parametrize("folder", FOLDERS)
@@ -44,7 +44,7 @@ def test_runs_a_command(folder: str) -> None:
     details = _run(exe, "info", "--json")
 
     assert greeting.stdout.strip() == "Hello, Ada!"
-    assert json.loads(details.stdout)["version"] == rayo_package.__version__
+    assert json.loads(details.stdout)["version"] == rayo.__version__
 
 
 @pytest.mark.parametrize("folder", FOLDERS)

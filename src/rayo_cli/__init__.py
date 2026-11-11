@@ -1,1 +1,1 @@
-"""Command line interface for rayo_package. Rename it to your CLI's import name."""
+"""Command line interface for rayo. Rename it to your CLI's import name."""

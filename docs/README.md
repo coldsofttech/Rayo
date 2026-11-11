@@ -5,6 +5,7 @@ Technical documentation for this project lives in this folder. The top-level [RE
 - [Repository setup](repo-setup.md): protections, ruleset and manual steps for new repos.
 - [Development](development.md): layout, tooling, CI and releasing to PyPI.
 - [Architecture](architecture.md): how checks, workflows, governance and releases fit together.
+- [Engine design](engine.md): the HLS engine's parts, the FFmpeg-free output approach and licensing rules.
 - [API](api.md): running the API on its own, settings, endpoints and the OpenAPI contract.
 - [UI](ui.md): the Windows window, the React frontend and how it talks to Python.
 - [Security](security.md): how requests are protected in the window and when run standalone.

@@ -10,7 +10,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-import rayo_package
+import rayo
 from tests.frozen import locate, skip_if_blocked
 
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="the UI is built on Windows only")
@@ -59,7 +59,7 @@ def test_serves_the_page_the_api_and_the_native_action(address: str) -> None:
         assert hello.json() == {"message": "Hello, Ada!"}
 
         info = client.post(f"{base}/api/bridge/app_info", json={}, headers={"Origin": base})
-        assert info.json()["result"]["version"] == rayo_package.__version__
+        assert info.json()["result"]["version"] == rayo.__version__
 
 
 def test_refuses_requests_without_the_session(address: str) -> None:

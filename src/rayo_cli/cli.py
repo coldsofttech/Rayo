@@ -8,12 +8,12 @@ import typer
 from rich.table import Table
 from rich.text import Text
 
+from rayo import __version__, greet
 from rayo_cli import output
-from rayo_package import __version__, greet
 
 app = typer.Typer(
     name="rayo-cli",
-    help="Example command line tool built on [bold]rayo_package[/bold].",
+    help="Example command line tool built on [bold]rayo[/bold].",
     no_args_is_help=True,
     rich_markup_mode="rich",
     # run() reports errors briefly; Typer's own traceback would show local variables.

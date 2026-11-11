@@ -27,6 +27,8 @@ classifiers = [
 # published to PyPI (the installers and the source tree carry them), so their libraries are
 # dependency groups below.
 dependencies = [
+  "cryptography>=44",
+  "httpx>=0.28",
   "rich>=13.9",
   "typer>=0.15",
 ]
@@ -54,8 +56,8 @@ dev = [
   { include-group = "api" },
   { include-group = "ui" },
   "cornea-shell[proxy]>=0.1.1",
-  "httpx>=0.28.1",
   "mypy>=1.13",
+  "pip-licenses>=5",
   "pre-commit>=4.0",
   "pytest>=8.3",
   "pytest-cov>=6.0",
@@ -79,14 +81,14 @@ ui-target = "rayo_ui.__main__:main"
 api = "rayo_api"
 
 [tool.hatch.version]
-path = "src/rayo_package/__init__.py"
+path = "src/rayo/__init__.py"
 
 # `uv build` publishes the core library and the command line only. The API and the window ship in
 # the Windows installers instead. The wheel is built from the sdist, so both
 # list the same two packages.
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/rayo_package",
+  "src/rayo",
   "src/rayo_cli",
   "/README.md",
   "/LICENSE",
@@ -95,7 +97,7 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "src/rayo_package",
+  "src/rayo",
   "src/rayo_cli",
 ]
 
@@ -119,7 +121,7 @@ files = ["src", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not integration' --strict-markers --cov=rayo_package --cov=rayo_cli --cov=rayo_api --cov=rayo_ui --cov-report=term-missing --cov-fail-under=80"
+addopts = "-m 'not integration' --strict-markers --cov=rayo --cov=rayo_cli --cov=rayo_api --cov=rayo_ui --cov-report=term-missing --cov-fail-under=80"
 markers = ["integration: slower end-to-end tests, run in CI but not by default or in pre-commit"]
 
 [tool.coverage.run]

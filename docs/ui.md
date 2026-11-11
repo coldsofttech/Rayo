@@ -4,7 +4,7 @@ The desktop window is hosted by [Cornea Shell](https://github.com/coldsofttech/C
 
 ## Static files, dynamic app
 
-Cornea serves the built files in `src/rayo_ui/ui/dist`, but the page is a normal single-page app that talks to Python while it runs. `ui/` holds only the interface; everything dynamic lives in `rayo_api` and `rayo_package`:
+Cornea serves the built files in `src/rayo_ui/ui/dist`, but the page is a normal single-page app that talks to Python while it runs. `ui/` holds only the interface; everything dynamic lives in `rayo_api` and `rayo`:
 
 - **Data:** `fetch('/api/v1/...')` calls the `rayo_api` routes and gets JSON.
 - **Native actions:** `POST /api/bridge/<action>` runs a Python function registered in `rayo_ui/app.py`. The example is `app_info`. Cornea also provides file and folder pickers, opening links and platform info.
@@ -21,7 +21,7 @@ src/rayo_ui/ui/           React + Vite (JavaScript): src/, index.html, package.j
 src/rayo_ui/ui/dist/      build output, not committed; frozen into the Windows build
 ```
 
-`app.py` only wires things together. It must not hold business logic, and `rayo_api` and `rayo_package` must never import `rayo_ui`.
+`app.py` only wires things together. It must not hold business logic, and `rayo_api` and `rayo` must never import `rayo_ui`.
 
 ## Running it
 

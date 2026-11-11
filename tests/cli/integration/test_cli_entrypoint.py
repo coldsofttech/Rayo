@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import rayo_package
+import rayo
 
 
 def _run(*command: str) -> subprocess.CompletedProcess[str]:
@@ -13,7 +13,7 @@ def test_module_entrypoint() -> None:
     result = _run(sys.executable, "-m", "rayo_cli", "--version")
 
     assert result.returncode == 0
-    assert rayo_package.__version__ in result.stdout
+    assert rayo.__version__ in result.stdout
 
 
 def test_console_script() -> None:
