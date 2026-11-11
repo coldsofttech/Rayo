@@ -1500,75 +1500,6 @@ wheels = [
 ]
 
 [[package]]
-name = "Rayo"
-source = { editable = "." }
-dependencies = [
-    { name = "rich" },
-    { name = "typer" },
-]
-
-[package.dev-dependencies]
-api = [
-    { name = "fastapi" },
-    { name = "pydantic-settings" },
-    { name = "uvicorn" },
-]
-dev = [
-    { name = "cornea-shell", extra = ["proxy"] },
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pydantic-settings" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-    { name = "schemathesis" },
-    { name = "uvicorn" },
-]
-installer = [
-    { name = "hatchling" },
-    { name = "pyinstaller" },
-]
-ui = [
-    { name = "cornea-shell", marker = "sys_platform == 'win32'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "rich", specifier = ">=13.9" },
-    { name = "typer", specifier = ">=0.15" },
-]
-
-[package.metadata.requires-dev]
-api = [
-    { name = "fastapi", specifier = ">=0.162.0" },
-    { name = "pydantic-settings", specifier = ">=2.16.2" },
-    { name = "uvicorn", specifier = ">=0.54.0" },
-]
-dev = [
-    { name = "cornea-shell", marker = "sys_platform == 'win32'", specifier = ">=0.1.1" },
-    { name = "cornea-shell", extras = ["proxy"], specifier = ">=0.1.1" },
-    { name = "fastapi", specifier = ">=0.162.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "mypy", specifier = ">=1.13" },
-    { name = "pre-commit", specifier = ">=4.0" },
-    { name = "pydantic-settings", specifier = ">=2.16.2" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-cov", specifier = ">=6.0" },
-    { name = "pytest-xdist", specifier = ">=3.6" },
-    { name = "ruff", specifier = ">=0.8" },
-    { name = "schemathesis", specifier = ">=4.32.7" },
-    { name = "uvicorn", specifier = ">=0.54.0" },
-]
-installer = [
-    { name = "hatchling", specifier = ">=1.33.0" },
-    { name = "pyinstaller", specifier = ">=6.22.3" },
-]
-ui = [{ name = "cornea-shell", marker = "sys_platform == 'win32'", specifier = ">=0.1.1" }]
-
-[[package]]
 name = "python-discovery"
 version = "1.6.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1681,6 +1612,75 @@ wheels = [
 ]
 
 [[package]]
+name = "rayo"
+source = { editable = "." }
+dependencies = [
+    { name = "rich" },
+    { name = "typer" },
+]
+
+[package.dev-dependencies]
+api = [
+    { name = "fastapi" },
+    { name = "pydantic-settings" },
+    { name = "uvicorn" },
+]
+dev = [
+    { name = "cornea-shell", extra = ["proxy"] },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pydantic-settings" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+    { name = "schemathesis" },
+    { name = "uvicorn" },
+]
+installer = [
+    { name = "hatchling" },
+    { name = "pyinstaller" },
+]
+ui = [
+    { name = "cornea-shell", marker = "sys_platform == 'win32'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "rich", specifier = ">=13.9" },
+    { name = "typer", specifier = ">=0.15" },
+]
+
+[package.metadata.requires-dev]
+api = [
+    { name = "fastapi", specifier = ">=0.162.0" },
+    { name = "pydantic-settings", specifier = ">=2.16.2" },
+    { name = "uvicorn", specifier = ">=0.54.0" },
+]
+dev = [
+    { name = "cornea-shell", marker = "sys_platform == 'win32'", specifier = ">=0.1.1" },
+    { name = "cornea-shell", extras = ["proxy"], specifier = ">=0.1.1" },
+    { name = "fastapi", specifier = ">=0.162.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mypy", specifier = ">=1.13" },
+    { name = "pre-commit", specifier = ">=4.0" },
+    { name = "pydantic-settings", specifier = ">=2.16.2" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-cov", specifier = ">=6.0" },
+    { name = "pytest-xdist", specifier = ">=3.6" },
+    { name = "ruff", specifier = ">=0.8" },
+    { name = "schemathesis", specifier = ">=4.33.1" },
+    { name = "uvicorn", specifier = ">=0.54.0" },
+]
+installer = [
+    { name = "hatchling", specifier = ">=1.33.0" },
+    { name = "pyinstaller", specifier = ">=6.22.3" },
+]
+ui = [{ name = "cornea-shell", marker = "sys_platform == 'win32'", specifier = ">=0.1.1" }]
+
+[[package]]
 name = "requests"
 version = "2.34.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1735,7 +1735,7 @@ wheels = [
 
 [[package]]
 name = "schemathesis"
-version = "4.32.7"
+version = "4.33.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1752,9 +1752,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "werkzeug" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e7/65/5851126cc23b4ab02282a805659bfd606103d91fee7a5df1a13d9600aa20/schemathesis-4.32.7.tar.gz", hash = "sha256:d9b85738621f860e03cb69c66529bfebe6e20474b13c2e57d946aa4ed23c729f", size = 3826279, upload-time = "2026-10-27T23:08:20.23Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/55/ecae3e8374f7bad565254a917c678d96bea95cea9bf5914df89290a0491a/schemathesis-4.33.1.tar.gz", hash = "sha256:610f2027ef2e60bf287971d5b299e6d25ab9725e2933f4425c41858593b06d79", size = 4039009, upload-time = "2026-11-04T15:30:13.738Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/1b/8101adb245bbcd3e38b31b00308c3dba13dc959366912d01794336ded20a/schemathesis-4.32.7-py3-none-any.whl", hash = "sha256:d52484f577dd8b91c778cfb0f6569570030a8822fde47baa7c87a53d0d81e245", size = 1177446, upload-time = "2026-10-27T23:08:17.549Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/7d/93c07ca9e3a8f2c82898237ccc87c8742081acb84d64d3fe48ffb7709dfe/schemathesis-4.33.1-py3-none-any.whl", hash = "sha256:409ecaa3ade87e9c7a4f417c9efb88bc60e7535252881f54f27e476c34b5c18c", size = 1264091, upload-time = "2026-11-04T15:30:11.37Z" },
 ]
 
 [[package]]
