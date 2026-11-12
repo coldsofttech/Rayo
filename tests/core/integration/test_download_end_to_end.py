@@ -131,3 +131,36 @@ def test_a_broken_segment_can_be_resumed_once_the_server_recovers(tmp_path: Path
         assert min(fetched) >= 1  # earlier segments were not fetched again
         assert (tmp_path / "video.ts").read_bytes() == expected()
         assert sorted(path.name for path in tmp_path.iterdir()) == ["video.ts"]
+
+
+def test_one_call_downloads_a_master_playlist_over_real_sockets(tmp_path: Path) -> None:
+    from rayohx import DownloadConfig, DownloadState, download
+
+    def ts(index: int) -> bytes:
+        return b"".join(b"\x47" + bytes([(index + n) % 256]) + bytes(186) for n in range(4))
+
+    routes: dict[str, object] = {
+        "/master.m3u8": lambda _s: Reply(body=MASTER.encode()),
+        "/high/index.m3u8": lambda _s: Reply(body=media_playlist("").encode()),
+    }
+    for index in range(COUNT):
+        routes[f"/high/seg{index}.ts"] = lambda _s, i=index: Reply(
+            body=ts(i), headers={"Content-Type": "video/mp2t"}
+        )
+    with LocalServer(routes) as server:  # type: ignore[arg-type]
+        events: list[EventType] = []
+        result = download(
+            f"{server.url}/master.m3u8",
+            tmp_path / "movie.ts",
+            config=DownloadConfig(network=NetworkConfig(user_agent="OneCall/1"), concurrency=6),
+            quality="720p",
+            on_event=lambda event: events.append(event.type),
+        )
+        assert result.state is DownloadState.COMPLETED
+        assert result.output is not None
+        assert result.output.size_bytes == COUNT * 4 * 188
+        assert (tmp_path / "movie.ts").read_bytes() == b"".join(ts(i) for i in range(COUNT))
+        assert events[0] is EventType.DOWNLOAD_STARTED
+        assert events[-1] is EventType.DOWNLOAD_COMPLETED
+        assert all(r.headers["user-agent"] == "OneCall/1" for r in server.requests)
+        assert sorted(path.name for path in tmp_path.iterdir()) == ["movie.ts"]

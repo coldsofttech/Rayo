@@ -118,3 +118,73 @@ def test_a_stream_sink_passes_bytes_in_order() -> None:
     assert received == [b"I", b"aa", b"b"]
     assert sink.commit() is None
     sink.abort(keep_partial=True)
+
+
+# --- a folder of separate segment files --------------------------------------------------------
+
+
+def test_a_directory_sink_writes_one_file_per_segment(tmp_path: Path) -> None:
+    from rayohx import ContainerFormat
+    from rayohx.sinks import DirectorySink
+
+    sink = DirectorySink(tmp_path / "parts", ContainerFormat.FMP4)
+    assert not sink.supports_resume
+    assert sink.open(resume_offset=99) == 0
+    assert sink.write(seg(0, b"aaa", init=b"INIT")) == 7
+    assert sink.write(seg(1, b"bb")) == 2
+    assert sink.checkpoint() == 9
+    assert not (tmp_path / "parts").exists()  # only the .part folder exists until the end
+    assert sorted(p.name for p in sink.part_path.iterdir()) == [
+        "init-00000.mp4",
+        "segment-00001.m4s",
+        "segment-00002.m4s",
+    ]
+    assert sink.commit(validate=lambda _path: pytest.fail("a folder is not validated")) == (
+        tmp_path / "parts"
+    )
+    assert (tmp_path / "parts" / "segment-00001.m4s").read_bytes() == b"aaa"
+    assert not sink.part_path.exists()
+
+
+def test_a_directory_sink_protects_a_folder_that_has_content(tmp_path: Path) -> None:
+    from rayohx import ContainerFormat
+    from rayohx.sinks import DirectorySink
+
+    (tmp_path / "parts").mkdir()
+    (tmp_path / "parts" / "mine.txt").write_text("keep")
+    with pytest.raises(OutputExistsError):
+        DirectorySink(tmp_path / "parts", ContainerFormat.MPEG_TS).preflight()
+    sink = DirectorySink(tmp_path / "parts", ContainerFormat.MPEG_TS, overwrite=True)
+    sink.open()
+    sink.write(seg(0, b"x"))
+    sink.commit()
+    assert sorted(p.name for p in (tmp_path / "parts").iterdir()) == ["segment-00001.ts"]
+
+
+def test_a_directory_sink_refuses_a_file_and_cleans_up_on_abort(tmp_path: Path) -> None:
+    from rayohx import ContainerFormat
+    from rayohx.sinks import DirectorySink
+
+    (tmp_path / "taken").write_text("a file")
+    with pytest.raises(OutputError, match="is a file"):
+        DirectorySink(tmp_path / "taken", ContainerFormat.MPEG_TS).preflight()
+    sink = DirectorySink(tmp_path / "parts", ContainerFormat.MPEG_TS)
+    sink.open()
+    sink.write(seg(0, b"x"))
+    sink.abort(keep_partial=True)
+    assert not sink.part_path.exists()
+
+
+def test_a_file_sink_checks_the_finished_file_before_putting_it_in_place(tmp_path: Path) -> None:
+    sink = FileSink(tmp_path / "a.ts")
+    sink.open()
+    sink.write(seg(0, b"data"))
+
+    def refuse(path: Path) -> None:
+        assert path == sink.part_path
+        assert path.read_bytes() == b"data"
+        raise OutputError("not valid")
+
+    with pytest.raises(OutputError, match="not valid"):
+        sink.commit(validate=refuse)
+    assert not (tmp_path / "a.ts").exists()

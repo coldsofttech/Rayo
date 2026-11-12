@@ -275,6 +275,8 @@ class SelectionConfig:
     #: Exact track names to download (as shown by ``inspect``), matched ignoring case.
     audio_names: tuple[str, ...] = ()
     subtitle_names: tuple[str, ...] = ()
+    #: Download only the video stream, leaving out separate audio and subtitle tracks.
+    video_only: bool = False
 
     def __post_init__(self) -> None:
         if not _QUALITY.match(self.quality):
@@ -313,6 +315,7 @@ class SelectionConfig:
             "subtitle_languages": list(self.subtitle_languages),
             "audio_names": list(self.audio_names),
             "subtitle_names": list(self.subtitle_names),
+            "video_only": self.video_only,
         }
 
 

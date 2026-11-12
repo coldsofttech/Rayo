@@ -5,6 +5,7 @@ in playlist order and hands them to the sink, so sinks need no locking. New work
 while the storage strategy allows it, which is what keeps memory and disk use bounded.
 """
 
+import contextvars
 import threading
 import time
 from collections.abc import Callable, Sequence
@@ -141,7 +142,10 @@ class SegmentPipeline:
                 continue
             if not self._admit(cursor, len(pending)):
                 break
-            pending[pool.submit(self._work, cursor)] = cursor
+            # Each worker runs in a copy of this thread's context, so its log lines carry the
+            # download id.
+            context = contextvars.copy_context()
+            pending[pool.submit(context.run, self._work, cursor)] = cursor
             cursor += 1
         return cursor
 

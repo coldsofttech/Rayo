@@ -15,13 +15,14 @@ from pathlib import Path
 
 from rayohx.cancellation import CancellationToken
 from rayohx.config import DownloadConfig
+from rayohx.containers import validate_output
 from rayohx.crypto import KeyProvider, require_supported_encryption
-from rayohx.enums import StorageStrategy
-from rayohx.errors import DownloadError, UnsupportedPlaylistError
+from rayohx.enums import ContainerFormat, DownloadState, StorageStrategy
+from rayohx.errors import DownloadError, FinalizationError, UnsupportedPlaylistError
 from rayohx.events import EventBus
 from rayohx.fetcher import HlsSegmentFetcher
 from rayohx.http_client import HttpClient
-from rayohx.models import MediaPlaylist, StorageMetrics, Variant
+from rayohx.models import DownloadProgress, MediaPlaylist, StorageMetrics, Variant
 from rayohx.pipeline import SegmentPipeline
 from rayohx.progress import ProgressTracker
 from rayohx.redaction import redact_url
@@ -52,6 +53,8 @@ class DownloadSummary:
     #: Segments that did not need downloading because an earlier run had them.
     resumed_segments: int
     metrics: StorageMetrics
+    #: The figures at the moment the last segment was written.
+    progress: DownloadProgress
     elapsed_seconds: float
     output: Path | None
 
@@ -61,6 +64,10 @@ class MediaDownload:
 
     ``cancel`` should be the same token the ``client`` was built with, so that waiting requests
     stop as soon as the download is cancelled.
+
+    When ``container`` is given, every segment is checked against it, and (with
+    ``config.output.validate``) the finished output is validated before it is put in place.
+    ``on_finalizing`` is called once all segments are written, just before that final step.
     """
 
     def __init__(
@@ -74,8 +81,12 @@ class MediaDownload:
         events: EventBus | None = None,
         download_id: str | None = None,
         cancel: CancellationToken | None = None,
+        container: ContainerFormat | None = None,
+        on_finalizing: Callable[[], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        self._container = container
+        self._on_finalizing = on_finalizing
         self._playlist = playlist
         self._client = client
         self._config = config
@@ -189,7 +200,9 @@ class MediaDownload:
         if state_file is not None:
             checkpoint(start_index, have)
 
-        fetcher = HlsSegmentFetcher(self._client, segments, KeyProvider(self._client))
+        fetcher = HlsSegmentFetcher(
+            self._client, segments, KeyProvider(self._client), container=self._container
+        )
         pipeline = SegmentPipeline(
             segments=segments,
             fetcher=fetcher,
@@ -216,24 +229,41 @@ class MediaDownload:
         )
         try:
             pipeline.run()
-            output = sink.commit()
-        except BaseException:
-            self._abandon(strategy, workspace, store)
+            final = progress.snapshot(DownloadState.FINALIZING, 0)
+            if self._on_finalizing is not None:
+                self._on_finalizing()
+            output = sink.commit(self._validator())
+        except BaseException as exc:
+            self._abandon(strategy, workspace, exc)
             raise
         return DownloadSummary(
             strategy=strategy,
             total_segments=len(segments),
             resumed_segments=start_index + reused,
             metrics=tracker.snapshot(),
+            progress=final,
             elapsed_seconds=self._clock() - started,
             output=output,
         )
 
+    def _validator(self) -> Callable[[Path], None] | None:
+        container = self._container
+        if container is None or not self._config.output.validate:
+            return None
+        return lambda path: validate_output(container, path)
+
     def _abandon(
-        self, strategy: StorageStrategy, workspace: Workspace | None, store: object
+        self, strategy: StorageStrategy, workspace: Workspace | None, error: BaseException
     ) -> None:
-        """After a failure or cancellation keep only what resuming needs."""
-        keep = self._config.resume and self._config.storage.keep_state_on_failure
+        """After a failure or cancellation keep only what resuming needs.
+
+        A finished download that failed its final check has nothing to resume, so it keeps nothing.
+        """
+        keep = (
+            self._config.resume
+            and self._config.storage.keep_state_on_failure
+            and not isinstance(error, FinalizationError)
+        )
         resumable = keep and self._sink.supports_resume
         self._sink.abort(keep_partial=resumable)
         if workspace is None:

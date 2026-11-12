@@ -7,12 +7,15 @@ function, for pipes and tests.
 """
 
 import os
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 from typing import IO, Protocol
 
+from rayohx.enums import ContainerFormat
 from rayohx.errors import OutputError, OutputExistsError
 from rayohx.models import SegmentData
+from rayohx.output import segment_file_name
 from rayohx.storage import translate_os_error
 
 PART_SUFFIX = ".part"
@@ -44,8 +47,12 @@ class OutputSink(Protocol):
         """Make everything written so far durable and return its size in bytes."""
         ...
 
-    def commit(self) -> Path | None:
-        """Finish successfully and return the final path, if any."""
+    def commit(self, validate: Callable[[Path], None] | None = None) -> Path | None:
+        """Finish successfully and return the final path, if any.
+
+        ``validate`` is called with the finished data before it is put in place, and may raise
+        to refuse it.
+        """
         ...
 
     def abort(self, *, keep_partial: bool) -> None:
@@ -119,9 +126,11 @@ class FileSink:
             raise translate_os_error(exc, str(self.target)) from exc
         return self._length
 
-    def commit(self) -> Path:
+    def commit(self, validate: Callable[[Path], None] | None = None) -> Path:
         self.checkpoint()
         self._close()
+        if validate is not None:
+            validate(self.part_path)
         target = self._target()
         if target.exists() and not self._overwrite:
             raise OutputExistsError(f"The output file appeared while downloading: {target}")
@@ -179,8 +188,92 @@ class StreamSink:
     def checkpoint(self) -> int:
         return self._length
 
-    def commit(self) -> Path | None:
+    def commit(self, validate: Callable[[Path], None] | None = None) -> Path | None:
         return None
 
     def abort(self, *, keep_partial: bool) -> None:
         return None
+
+
+class DirectorySink:
+    """Saves every segment as its own file in a folder, for people who join them another way.
+
+    Files are written into ``<folder>.part`` and the folder is renamed only when the download is
+    complete. This sink cannot resume.
+    """
+
+    supports_resume = False
+    writes_file = True
+
+    def __init__(
+        self, folder: Path | str, container: ContainerFormat, *, overwrite: bool = False
+    ) -> None:
+        self.target: Path | None = Path(folder).absolute()
+        self._container = container
+        self._overwrite = overwrite
+        self._written = 0
+
+    @property
+    def part_path(self) -> Path:
+        """The folder being filled until the download completes."""
+        assert self.target is not None  # noqa: S101 - set in __init__
+        return self.target.with_name(self.target.name + PART_SUFFIX)
+
+    def preflight(self) -> None:
+        target = self._target()
+        if target.is_file():
+            raise OutputError(f"The output path {target} is a file.", hint="Give a folder name.")
+        if target.exists() and any(target.iterdir()) and not self._overwrite:
+            raise OutputExistsError(
+                f"The output folder is not empty: {target}",
+                hint="Choose another folder or allow overwriting.",
+            )
+
+    def open(self, *, resume_offset: int | None = None) -> int:
+        self.preflight()
+        try:
+            shutil.rmtree(self.part_path, ignore_errors=True)
+            self.part_path.mkdir(parents=True)
+        except OSError as exc:
+            raise translate_os_error(exc, str(self.target)) from exc
+        self._written = 0
+        return 0
+
+    def write(self, data: SegmentData) -> int:
+        try:
+            if data.init:
+                (
+                    self.part_path / segment_file_name(data.index, self._container, init=True)
+                ).write_bytes(data.init)
+            (self.part_path / segment_file_name(data.index, self._container)).write_bytes(
+                data.media
+            )
+        except OSError as exc:
+            raise translate_os_error(exc, str(self.part_path)) from exc
+        self._written += data.size
+        return data.size
+
+    def checkpoint(self) -> int:
+        return self._written
+
+    def commit(self, validate: Callable[[Path], None] | None = None) -> Path:
+        # Each segment was checked as it arrived, so there is no single file to validate.
+        target = self._target()
+        try:
+            if target.exists():
+                if not self._overwrite:
+                    raise OutputExistsError(
+                        f"The output folder appeared while downloading: {target}"
+                    )
+                shutil.rmtree(target)
+            os.replace(self.part_path, target)
+        except OSError as exc:
+            raise translate_os_error(exc, str(target)) from exc
+        return target
+
+    def abort(self, *, keep_partial: bool) -> None:
+        shutil.rmtree(self.part_path, ignore_errors=True)
+
+    def _target(self) -> Path:
+        assert self.target is not None  # noqa: S101 - set in __init__
+        return self.target

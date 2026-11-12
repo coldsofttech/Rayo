@@ -11,6 +11,7 @@ from rayohx.config import (
     SelectionConfig,
     StorageConfig,
 )
+from rayohx.controller import Downloader, download
 from rayohx.core import greet
 from rayohx.enums import (
     ContainerFormat,
@@ -75,6 +76,7 @@ from rayohx.models import (
     Variant,
     VideoTrack,
 )
+from rayohx.output import OutputPlan, plan_output
 from rayohx.playlist import is_hls_playlist, parse_playlist
 from rayohx.ratelimit import RateLimiter
 from rayohx.selection import StreamSelection, select_stream
@@ -98,6 +100,7 @@ __all__ = [
     "DownloadState",
     "DownloadStateMachine",
     "DownloadSummary",
+    "Downloader",
     "EncryptionInfo",
     "EncryptionMethod",
     "EventBus",
@@ -129,6 +132,7 @@ __all__ = [
     "OutputFormat",
     "OutputFormatError",
     "OutputInfo",
+    "OutputPlan",
     "OutputSink",
     "Playlist",
     "PlaylistError",
@@ -160,10 +164,12 @@ __all__ = [
     "WorkspaceLockedError",
     "__version__",
     "configure_logging",
+    "download",
     "greet",
     "inspect",
     "inspect_playlist",
     "is_hls_playlist",
     "parse_playlist",
+    "plan_output",
     "select_stream",
 ]

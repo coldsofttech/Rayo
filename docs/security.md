@@ -33,6 +33,7 @@ When run alone (`python -m rayohx_api`), Cornea is absent, so the API protects i
 - **Network defaults:** TLS certificates are verified, and a warning is logged whenever verification is turned off. Proxy settings and environment variables such as `HTTPS_PROXY` are not read implicitly. Response sizes are limited (32 MiB for a playlist, 512 MiB for a single media request by default).
 - **Address guard:** every request address, including redirect targets, can be vetted by a `url_guard` function, which keeps server-side request forgery protection possible for future server use.
 - **Working folder:** its name is a hash of the address and output name, never user input, so it cannot point elsewhere. It is created readable by the current user only, where the system allows, and locked while in use. Resume state holds a fingerprint, counters and a redacted address, never headers, cookies or keys. Keys are kept in memory only.
+- **File names:** names made from an address contain only letters, digits, dots, dashes and underscores, never start with a dot, never contain a path separator and are never Windows device names, so a hostile address cannot write outside the chosen folder. A name you give is used as given, but its extension must match the content.
 - **No DRM claim:** only plain AES-128 is decrypted. SAMPLE-AES and DRM key formats are refused before downloading.
 - **Files:** an existing output file is never replaced unless `overwrite` is on. Output is written to a `.part` file and renamed only when complete.
 

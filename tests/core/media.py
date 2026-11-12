@@ -1,5 +1,6 @@
 """A fake media origin for download tests: serves segments, keys and init sections in memory."""
 
+import struct
 import threading
 import time
 from collections.abc import Iterator
@@ -19,6 +20,30 @@ IV = bytes(range(16))
 def payload(index: int, size: int = 500) -> bytes:
     """Deterministic, recognisable bytes for segment ``index``."""
     return bytes((index * 31 + offset * 7) % 251 for offset in range(size))
+
+
+def box(kind: bytes, body: bytes = b"") -> bytes:
+    """An MP4 box: a 4-byte size, a 4-byte type, then the body."""
+    return struct.pack(">I4s", 8 + len(body), kind) + body
+
+
+def ts_payload(index: int, packets: int = 3) -> bytes:
+    """MPEG-TS packets (188 bytes each, starting with the 0x47 sync byte)."""
+    return b"".join(
+        b"\x47" + bytes([(index + number) % 256]) + bytes(186) for number in range(packets)
+    )
+
+
+def fmp4_init() -> bytes:
+    """A minimal fragmented-MP4 initialization section."""
+    return box(b"ftyp", b"iso5\x00\x00\x00\x01iso5") + box(b"moov", box(b"mvhd", bytes(20)))
+
+
+def fmp4_fragment(index: int, size: int = 100) -> bytes:
+    """A movie fragment: a ``moof`` box followed by its ``mdat`` box."""
+    return box(b"moof", box(b"mfhd", struct.pack(">II", 0, index + 1))) + box(
+        b"mdat", bytes([index % 251]) * size
+    )
 
 
 def encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
@@ -44,6 +69,7 @@ class Origin:
         byte_ranges: bool = False,
         end_list: bool = True,
         duration: float = 4.0,
+        content: str = "raw",
     ) -> None:
         self.count = count
         self.size = size
@@ -63,7 +89,14 @@ class Origin:
         self.active = 0
         self.max_active = 0
         self._lock = threading.Lock()
-        self.plain = [payload(i, size) for i in range(count)]
+        self.files: dict[str, bytes] = {}
+        if content == "ts":
+            self.plain = [ts_payload(i) for i in range(count)]
+        elif content == "fmp4":
+            self.plain = [fmp4_fragment(i) for i in range(count)]
+            self.init = self.init if self.init is not None else fmp4_init()
+        else:
+            self.plain = [payload(i, size) for i in range(count)]
         self._blobs = [self._wire(i) for i in range(count)]
 
     def _iv(self, index: int) -> bytes:
@@ -128,6 +161,10 @@ class Origin:
                 self.active -= 1
 
     def _respond(self, name: str, request: httpx.Request) -> httpx.Response:
+        if name in self.files:
+            return httpx.Response(200, content=self.files[name])
+        if name == "index.m3u8":
+            return httpx.Response(200, content=self.playlist_text().encode())
         if name == "key.bin":
             with self._lock:
                 self.key_requests += 1

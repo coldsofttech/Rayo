@@ -251,3 +251,15 @@ def test_language_matching_ignores_case() -> None:
     )
     assert [track.name for track in chosen.audio_tracks] == ["Eng"]
     assert [track.name for track in chosen.subtitle_tracks] == ["Sub"]
+
+
+def test_video_only_skips_audio_and_subtitle_tracks() -> None:
+    master = load("master_audio_subs.m3u8")
+    wanted = SelectionConfig(audio_languages=("fr",), subtitle_languages=("en",), video_only=True)
+    chosen = select_stream(master, wanted)
+    assert quality_height(chosen.variant) == 1080
+    assert chosen.audio_tracks == ()
+    assert chosen.subtitle_tracks == ()
+    assert any("Only the video" in note for note in chosen.notes)
+    assert SelectionConfig().as_dict()["video_only"] is False
+    assert wanted.as_dict()["video_only"] is True

@@ -78,6 +78,27 @@ $ rayohx-ui
 
 `rayohx-ui` opens the app window. `rayohx-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
 
+## Downloading a stream from Python
+
+```python
+from rayohx import download
+
+result = download("https://example.com/master.m3u8", "video.ts", quality="1080p")
+print(result.output.path, result.output.size_bytes)
+```
+
+`download` looks at the playlist, picks the stream you asked for (`quality` can be `"best"`, `"worst"`, `"auto"` or a height such as `"720p"`, and `max_resolution` and `max_bitrate` set limits), downloads the segments in parallel and checks the finished file. A download that is interrupted or cancelled continues where it stopped the next time you run it, and by default your disk needs only the size of the video, not twice that.
+
+To look at a stream without downloading it, use `inspect("https://example.com/master.m3u8")`.
+
+What works today, and what does not yet:
+
+- MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`. A name that does not match what is inside (for example `.mp4` for an MPEG-TS stream) is refused with an explanation, never quietly mislabelled.
+- Encrypted streams (plain AES-128) work. Protected (DRM) streams and live streams are refused.
+- Streams that keep their audio in a separate track need a merge step that is not available yet. Add `video_only=True` to download just the video, or save the pieces with `format="segments"`. Subtitles cannot be saved yet.
+- An existing file is never replaced unless you add `overwrite=True`.
+- Use `on_event=` to follow progress, and `cancel=` with a `CancellationToken` to stop a download.
+
 See the [CLI reference](docs/cli.md) for every command, option and exit code, and the [API guide](docs/api.md) to run the API on its own.
 
 > After renaming the commands, update the examples above. Once you have written your tool's real behavior, replace this example with a short walkthrough.
