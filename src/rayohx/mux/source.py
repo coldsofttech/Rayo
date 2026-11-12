@@ -39,6 +39,8 @@ _UNSUPPORTED = {
     0xEA: ("VC-1 video", "video"),
 }
 _AUDIO = frozenset({"aac", "mp3", "ac3", "eac3"})
+#: A picture shown this many seconds from its decode time is a damaged timestamp, not a real one.
+_MAX_REORDER = 60.0
 #: Gaps in audio shorter than this many seconds are kept; longer jumps are timestamp resets.
 _MAX_AUDIO_GAP = 5.0
 
@@ -229,6 +231,8 @@ class _StreamState:
                 continue  # cannot be decoded without the keyframe before it
             self._seen_sync = True
             pts = pes.pts if pes.pts is not None else pes.dts
+            if abs(pts - pes.dts) > _MAX_REORDER * 90000:
+                pts = pes.dts  # damaged timestamps must not break the file
             sample = Sample(
                 data, dts=pes.dts + index, duration=0, cts_offset=pts - pes.dts, sync=sync
             )

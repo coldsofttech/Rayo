@@ -236,7 +236,7 @@ class TsDemuxer:
         length = (data[4] << 8) | data[5]
         if length and len(data) > 6 + length:
             data = data[: 6 + length]
-        if stream_id not in _PES_STREAM_IDS_WITH_HEADER:
+        if stream_id not in _PES_STREAM_IDS_WITH_HEADER or len(data) < 9:
             return
         flags = data[7] >> 6
         header_end = 9 + data[8]

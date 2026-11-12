@@ -83,8 +83,8 @@ What to tell your users, once the channels are on:
 | winget | `winget install <Identifier>` | `winget uninstall <Identifier>` |
 | Scoop | `scoop bucket add <name> https://github.com/<owner>/scoop-bucket`, then `scoop install <name>` | `scoop uninstall <name>` |
 | Homebrew | `brew install <owner>/tap/<name>` | `brew uninstall <name>` |
-| Debian, Ubuntu | `sudo apt install ./<name>_<version>_amd64.deb` | `sudo apt remove <name>` |
-| Fedora, RHEL | `sudo dnf install ./<name>-<version>-1.x86_64.rpm` | `sudo dnf remove <name>` |
+| Debian, Ubuntu | `sudo apt install ./<name>_<version>_amd64.deb` (or `_arm64.deb` on ARM) | `sudo apt remove <name>` |
+| Fedora, RHEL | `sudo dnf install ./<name>-<version>-1.x86_64.rpm` (or `.aarch64.rpm` on ARM) | `sudo dnf remove <name>` |
 | Windows setup | run `<name>-<version>-setup.exe` from the release page | Settings > Apps |
 | PyPI (command line only) | `uv tool install <project>` or `pipx install <project>` | `uv tool uninstall <project>` |
 

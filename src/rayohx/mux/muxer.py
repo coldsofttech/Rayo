@@ -195,10 +195,10 @@ def patch_fragment(fragment: bytes, sequence: int, track_id: int, shift: int) ->
         FinalizationError: If the fragment uses absolute data offsets, which cannot be moved.
     """
     data = bytearray(fragment)
-    moof_end = struct.unpack_from(">I", data, 0)[0]
+    moof_end = _checked_end(data, 0, len(data))
     position = 8
     while position < moof_end:
-        size, kind = struct.unpack_from(">I4s", data, position)
+        size, kind = _checked_box(data, position, moof_end)
         if kind == b"mfhd":
             struct.pack_into(">I", data, position + 12, sequence)
         elif kind == b"traf":
@@ -207,10 +207,24 @@ def patch_fragment(fragment: bytes, sequence: int, track_id: int, shift: int) ->
     return bytes(data)
 
 
+def _checked_box(data: bytes | bytearray, position: int, end: int) -> tuple[int, bytes]:
+    """The size and type of the box at ``position``, which must fit before ``end``."""
+    if position + 8 > end:
+        raise FinalizationError("A fragment is damaged.")
+    size, kind = struct.unpack_from(">I4s", data, position)
+    if size < 8 or position + size > end:
+        raise FinalizationError("A fragment is damaged.")
+    return size, kind
+
+
+def _checked_end(data: bytes | bytearray, position: int, end: int) -> int:
+    return position + _checked_box(data, position, end)[0]
+
+
 def _patch_traf(data: bytearray, start: int, end: int, track_id: int, shift: int) -> None:
     position = start
     while position < end:
-        size, kind = struct.unpack_from(">I4s", data, position)
+        size, kind = _checked_box(data, position, end)
         if kind == b"tfhd":
             flags = struct.unpack_from(">I", data, position + 8)[0] & 0xFFFFFF
             if flags & 0x1:

@@ -97,9 +97,16 @@ jobs:
             dist/installer/*.zip
 
   installers-linux:
+    name: installers-linux (${{ matrix.arch }})
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15 # target: under 5 minutes
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, runner: ubuntu-latest }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3
@@ -112,19 +119,20 @@ jobs:
       - name: Install nfpm (checksum verified)
         env:
           VERSION: ${{ steps.tools.outputs.nfpm }}
+          ARCH: ${{ matrix.arch }}
         run: |
           base="https://github.com/goreleaser/nfpm/releases/download/v${VERSION}"
-          curl -fsSLO "${base}/nfpm_${VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSLO "${base}/nfpm_${VERSION}_Linux_${ARCH}.tar.gz"
           curl -fsSLO "${base}/checksums.txt"
           sha256sum --ignore-missing --check checksums.txt
-          tar -xzf "nfpm_${VERSION}_Linux_x86_64.tar.gz" nfpm
+          tar -xzf "nfpm_${VERSION}_Linux_${ARCH}.tar.gz" nfpm
           sudo install nfpm /usr/local/bin/nfpm
       - run: uv sync --locked --group installer
       - name: Build the packages and smoke test the executable
         run: uv run python scripts/build_installer.py cli --smoke
       - uses: actions/upload-artifact@v7
         with:
-          name: installers-linux
+          name: installers-linux-${{ matrix.arch }}
           path: |
             dist/installer/*.deb
             dist/installer/*.rpm

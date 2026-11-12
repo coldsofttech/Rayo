@@ -99,3 +99,7 @@ Publishing uses [trusted publishing](https://docs.pypi.org/trusted-publishers/),
 The muxer tests use small real MPEG-TS and fragmented MP4 files in `tests/fixtures/media` (about 860 KB), including two complete HLS sets with separate audio. They were made by FFmpeg so that RayoHX's output can be compared with something it did not write. To regenerate them, run `python scripts/make_media_fixtures.py` (needs `ffmpeg` with libx264 and libx265).
 
 `ffmpeg` and `ffprobe` are used by some tests only as a reference to compare against, and those tests are skipped when they are not installed. They are never needed to use or build RayoHX.
+
+## Platforms in CI
+
+Tests run on Linux (Python 3.11 to 3.15), and on Windows, macOS (Apple silicon and Intel) and Linux ARM64 (Python 3.11). The Linux packages are built for x86_64 and arm64 on matching runners. For longer fuzzing of damaged media run `RAYOHX_FUZZ_SEEDS=1500 uv run pytest tests/core/test_hardening.py`, and see [benchmarks](benchmarks.md) for speed checks.
