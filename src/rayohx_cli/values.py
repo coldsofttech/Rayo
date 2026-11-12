@@ -101,6 +101,10 @@ def build_config(
     quality: str = "best",
     max_resolution: str | None = None,
     max_bitrate: str | None = None,
+    variant: int | None = None,
+    resolution: str | None = None,
+    bandwidth: str | None = None,
+    variant_name: str | None = None,
     audio: Sequence[str] = (),
     audio_name: Sequence[str] = (),
     subtitles: Sequence[str] = (),
@@ -126,6 +130,7 @@ def build_config(
     workspace: Path | None = None,
     buffer_size: str | None = None,
     max_temp_size: str | None = None,
+    space_check: bool = True,
     format: OutputFormat = OutputFormat.AUTO,
     overwrite: bool = False,
     validate: bool = True,
@@ -168,7 +173,11 @@ def build_config(
         network_options["proxy"] = ProxyConfig(url=proxy)
     if rate_limit:
         network_options["rate_limit"] = parse_size(rate_limit, name="rate limit")
-    storage_options: dict[str, object] = {"strategy": storage, "workspace_dir": workspace}
+    storage_options: dict[str, object] = {
+        "strategy": storage,
+        "workspace_dir": workspace,
+        "check_space": space_check,
+    }
     if buffer_size:
         storage_options["buffer_bytes"] = parse_size(buffer_size, name="buffer size")
     if max_temp_size:
@@ -182,7 +191,12 @@ def build_config(
         "subtitle_languages": tuple(subtitles),
         "subtitle_names": tuple(subtitle_name),
         "video_only": video_only,
+        "variant": variant,
+        "resolution": resolution,
+        "variant_name": variant_name,
     }
+    if bandwidth:
+        selection_options["bandwidth"] = parse_size(bandwidth, name="bandwidth", decimal=True)
     if max_bitrate:
         selection_options["max_bitrate"] = parse_size(max_bitrate, name="bitrate", decimal=True)
 

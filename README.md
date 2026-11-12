@@ -95,7 +95,7 @@ result = download("https://example.com/master.m3u8", "video.ts", quality="1080p"
 print(result.output.path, result.output.size_bytes)
 ```
 
-`download` looks at the playlist, picks the stream you asked for (`quality` can be `"best"`, `"worst"`, `"auto"` or a height such as `"720p"`, and `max_resolution` and `max_bitrate` set limits), downloads the segments in parallel and checks the finished file. A download that is interrupted or cancelled continues where it stopped the next time you run it, and by default your disk needs only the size of the video, not twice that.
+`download` looks at the playlist, picks the stream you asked for (`quality` can be `"best"`, `"worst"`, `"auto"` or a height such as `"720p"`, and `max_resolution` and `max_bitrate` set limits, and `SelectionConfig` can pick an exact stream by number, size, bandwidth or name), downloads the segments in parallel and checks the finished file. A download that is interrupted or cancelled continues where it stopped the next time you run it, and by default your disk needs only the size of the video, not twice that.
 
 To look at a stream without downloading it, use `inspect("https://example.com/master.m3u8")`.
 
@@ -110,7 +110,7 @@ What works today:
 - Use `on_event=` to follow progress, and `cancel=` with a `CancellationToken` to stop a download.
 - A download that is interrupted or cancelled continues where it stopped, except when audio and video are being joined, which starts again.
 
-See the [CLI reference](docs/cli.md) for every command, option and exit code, and the [API guide](docs/api.md) to run the API on its own.
+See the [Python guide](docs/python.md) and [reference](docs/python-reference.md), the [CLI guide](docs/cli.md) for every command, option and exit code, the [API guide](docs/api.md) to run the API on its own, and the [migration guide](docs/migration.md) if you used `pym3u8downloader`.
 
 > After renaming the commands, update the examples above. Once you have written your tool's real behavior, replace this example with a short walkthrough.
 

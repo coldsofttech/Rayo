@@ -172,7 +172,7 @@ def test_info_shows_what_the_options_would_pick(runner: CliRunner, serve: Serve)
     worst = parsed(runner.invoke(app, ["info", url, "--json", "--quality", "worst"]).stdout)
     capped = parsed(runner.invoke(app, ["info", url, "--json", "--max-resolution", "720p"]).stdout)
     nothing = parsed(runner.invoke(app, ["info", url, "--json", "--max-bitrate", "100k"]).stdout)
-    assert [d["selection"]["variant"] for d in (best, worst, capped, nothing)] == [2, 0, 1, 0]
+    assert [d["selection"]["variant"] for d in (best, worst, capped, nothing)] == [3, 1, 2, 1]
     assert nothing["selection"]["notes"]
     table = runner.invoke(app, ["info", url, "--quality", "720p"]).stdout
     assert "*" in table.split("1280x720")[0].splitlines()[-1]  # the picked row is marked
@@ -589,7 +589,7 @@ def test_a_settings_file_applies_to_every_command_that_has_the_option(
     serve(hls_site("ts", "ts"))
     (Path.cwd() / "rayohx.toml").write_text('quality = "worst"\n', encoding="utf-8")
     data = parsed(runner.invoke(app, ["info", MASTER, "--json"]).stdout)
-    assert data["selection"]["variant"] == 0
+    assert data["selection"]["variant"] == 1
 
 
 def test_settings_files_can_be_ignored(
@@ -672,3 +672,94 @@ def test_retries_are_visible_and_secrets_are_not(
     assert "Retrying" in text
     assert "hunter2" not in text
     assert "hunter2" not in result.stderr
+
+
+# --- exact stream choices and the space check ----------------------------------------------------
+
+LADDER = (
+    "#EXTM3U\n"
+    '#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360,NAME="low"\nlow.m3u8\n'
+    '#EXT-X-STREAM-INF:BANDWIDTH=2800000,RESOLUTION=1280x720,NAME="mid"\nmid.m3u8\n'
+    '#EXT-X-STREAM-INF:BANDWIDTH=3500000,RESOLUTION=1280x720,NAME="alt"\nalt.m3u8\n'
+    "#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080\nhigh.m3u8\n"
+)
+
+
+def _chosen(runner: CliRunner, serve: Serve, *options: str) -> int:
+    serve(Site({"m/master.m3u8": LADDER.encode()}))
+    result = runner.invoke(app, ["info", BASE + "m/master.m3u8", "--json", *options])
+    assert result.exit_code == 0, result.stderr
+    return int(parsed(result.stdout)["selection"]["variant"])
+
+
+def test_streams_are_numbered_from_one(runner: CliRunner, serve: Serve) -> None:
+    serve(Site({"m/master.m3u8": LADDER.encode()}))
+    data = parsed(runner.invoke(app, ["info", BASE + "m/master.m3u8", "--json"]).stdout)
+    assert [v["index"] for v in data["variants"]] == [1, 2, 3, 4]
+    table = runner.invoke(app, ["info", BASE + "m/master.m3u8", "--variant", "2"]).stdout
+    assert "1280x720" in table.split("*")[1].splitlines()[0]
+
+
+def test_a_stream_can_be_chosen_by_number_size_bandwidth_or_name(
+    runner: CliRunner, serve: Serve
+) -> None:
+    assert _chosen(runner, serve, "--variant", "1") == 1
+    assert _chosen(runner, serve, "--resolution", "1280x720") == 3
+    assert _chosen(runner, serve, "--resolution", "1280x720", "--quality", "worst") == 2
+    assert _chosen(runner, serve, "--bandwidth", "2800000") == 2
+    assert _chosen(runner, serve, "--bandwidth", "2.8M") == 2
+    assert _chosen(runner, serve, "--variant-name", "ALT") == 3
+
+
+def test_a_choice_that_matches_nothing_is_explained(runner: CliRunner, serve: Serve) -> None:
+    serve(Site({"m/master.m3u8": LADDER.encode()}))
+    result = runner.invoke(app, ["info", BASE + "m/master.m3u8", "--resolution", "800x600"])
+    assert result.exit_code == 2
+    assert "No stream has size 800x600" in result.stderr
+    assert "1: 640x360" in result.stderr
+
+
+def test_the_number_conflicts_with_other_choices_and_must_be_positive(runner: CliRunner) -> None:
+    result = runner.invoke(app, ["info", MASTER, "--variant", "1", "--resolution", "1280x720"])
+    assert result.exit_code == 2
+    assert "by itself" in result.stderr
+    assert runner.invoke(app, ["download", MASTER, "--variant", "0"]).exit_code == 2
+    assert runner.invoke(app, ["download", MASTER, "--resolution", "720p"]).exit_code == 2
+
+
+def test_the_stream_choices_and_the_space_check_reach_the_engine(
+    runner: CliRunner, fake_downloader: type[FakeDownloader]
+) -> None:
+    runner.invoke(
+        app,
+        ["download", MASTER, "--resolution", "1280x720", "--bandwidth", "2M", "--variant-name", "x",
+         "--no-space-check"],
+    )  # fmt: skip
+    config = last(fake_downloader).config
+    assert config is not None
+    assert config.selection.resolution == "1280x720"
+    assert config.selection.bandwidth == 2_000_000
+    assert config.selection.variant_name == "x"
+    assert not config.storage.check_space
+    runner.invoke(app, ["download", MASTER, "--variant", "3"], env={"RAYOHX_SPACE_CHECK": "false"})
+    config = last(fake_downloader).config
+    assert config is not None
+    assert config.selection.variant == 3
+    assert not config.storage.check_space
+
+
+def test_the_space_check_is_on_by_default_and_can_be_turned_off(
+    runner: CliRunner, serve: Serve, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    serve(hls_site("ts", "ts"))
+    calls: list[int] = []
+    monkeypatch.setattr("rayohx.media_download.check_disk_space", lambda *a, **k: calls.append(1))
+    runner.invoke(app, ["download", MASTER, "-o", str(tmp_path / "a.mp4")])
+    assert calls
+    calls.clear()
+    result = runner.invoke(
+        app, ["download", MASTER, "-o", str(tmp_path / "b.mp4"), "--no-space-check"]
+    )
+    assert result.exit_code == 0
+    assert not calls
+    assert "space check is turned off" in result.stderr

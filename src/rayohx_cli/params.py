@@ -54,6 +54,43 @@ MaxBitrate = Annotated[
         rich_help_panel=SELECTION,
     ),
 ]
+Variant = Annotated[
+    int | None,
+    typer.Option(
+        "--variant",
+        envvar="RAYOHX_VARIANT",
+        min=1,
+        help="Download this stream, by its number in `rayohx info` (the first is 1).",
+        rich_help_panel=SELECTION,
+    ),
+]
+Resolution = Annotated[
+    str | None,
+    typer.Option(
+        "--resolution",
+        envvar="RAYOHX_RESOLUTION",
+        help="Only streams with exactly this size, such as 1280x720.",
+        rich_help_panel=SELECTION,
+    ),
+]
+Bandwidth = Annotated[
+    str | None,
+    typer.Option(
+        "--bandwidth",
+        envvar="RAYOHX_BANDWIDTH",
+        help="Only streams with exactly this bit rate, in bits per second (for example 2800000).",
+        rich_help_panel=SELECTION,
+    ),
+]
+VariantName = Annotated[
+    str | None,
+    typer.Option(
+        "--variant-name",
+        envvar="RAYOHX_VARIANT_NAME",
+        help="Only streams with exactly this name (ignoring case).",
+        rich_help_panel=SELECTION,
+    ),
+]
 Audio = Annotated[
     list[str] | None,
     typer.Option(
@@ -279,6 +316,15 @@ MaxTempSize = Annotated[
         "--max-temp-size",
         envvar="RAYOHX_MAX_TEMP_SIZE",
         help="Most working disk space to use, for example 2G.",
+        rich_help_panel=ENGINE,
+    ),
+]
+SpaceCheck = Annotated[
+    bool,
+    typer.Option(
+        "--space-check/--no-space-check",
+        envvar="RAYOHX_SPACE_CHECK",
+        help="Check that the disk has room (turn off if the free space is reported wrongly).",
         rich_help_panel=ENGINE,
     ),
 ]

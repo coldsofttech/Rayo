@@ -32,9 +32,11 @@ rayohx download https://example.com/master.m3u8 --quality 720p -a en -s en
 file=$(rayohx download https://example.com/master.m3u8 --quiet)
 ```
 
-Options are grouped in `rayohx download --help`: what to download (`--quality`, `--max-resolution`, `--max-bitrate`, `--audio`, `--audio-name`, `--subtitles`, `--subtitle-name`, `--video-only`), network (`--header`, `--cookie`, `--user-agent`, `--referer`, `--origin`, `--proxy`, `--insecure`, `--ca-bundle`, timeouts, `--retries`, `--rate-limit`, `--credential-host`), the download engine (`--concurrency`, `--resume/--no-resume`, `--storage`, `--workspace`, `--buffer-size`, `--max-temp-size`), the output (`--output`, `--format`, `--overwrite`, `--validate/--no-validate`, `--remux-backend`, `--ffmpeg`) and the display (`--json`, `--progress`). `info` accepts the options that choose or reach a stream.
+Options are grouped in `rayohx download --help`: what to download (`--quality`, `--max-resolution`, `--max-bitrate`, the exact choices `--variant`, `--resolution`, `--bandwidth` and `--variant-name`, `--audio`, `--audio-name`, `--subtitles`, `--subtitle-name`, `--video-only`), network (`--header`, `--cookie`, `--user-agent`, `--referer`, `--origin`, `--proxy`, `--insecure`, `--ca-bundle`, timeouts, `--retries`, `--rate-limit`, `--credential-host`), the download engine (`--concurrency`, `--space-check/--no-space-check`, `--resume/--no-resume`, `--storage`, `--workspace`, `--buffer-size`, `--max-temp-size`), the output (`--output`, `--format`, `--overwrite`, `--validate/--no-validate`, `--remux-backend`, `--ffmpeg`) and the display (`--json`, `--progress`). `info` accepts the options that choose or reach a stream.
 
 Sizes accept `K`, `M`, `G` (binary, so `4M` is 4 MiB); bitrates are decimal (`4M` is 4,000,000 bit/s). `--header`, `--cookie` and the other repeatable options accept `@file` to read values from a file, which keeps secrets out of your shell history and process list.
+
+Streams are numbered from 1 in `rayohx info`. `--variant 3` downloads stream 3 by itself; `--resolution 1280x720`, `--bandwidth` (matches the bit rate or the average) and `--variant-name` narrow the choice and can be combined, and `--quality` then picks among what is left. A choice that matches nothing lists the streams that exist.
 
 An existing output file is never replaced unless you pass `--overwrite`.
 

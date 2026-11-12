@@ -25,7 +25,7 @@ from rayohx.selection import StreamSelection
 def variant_to_dict(index: int, variant: Variant) -> dict[str, Any]:
     """A variant, with its position in the playlist."""
     return {
-        "index": index,
+        "index": index + 1,
         "name": variant.name,
         "resolution": str(variant.resolution) if variant.resolution else None,
         "bandwidth": variant.bandwidth,
@@ -62,7 +62,7 @@ def selection_to_dict(master: MasterPlaylist, selection: StreamSelection) -> dic
     """What a download with the current settings would pick."""
     index = master.variants.index(selection.variant)
     return {
-        "variant": index,
+        "variant": index + 1,
         "audio": [track.name for track in selection.audio_tracks],
         "subtitles": [track.name for track in selection.subtitle_tracks],
         "notes": list(selection.notes),

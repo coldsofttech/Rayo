@@ -92,7 +92,7 @@ def _tracks(tracks: list[dict[str, Any]], title: str, *, with_channels: bool) ->
 
 
 def _selection(data: dict[str, Any], selection: dict[str, Any]) -> None:
-    variant = data["variants"][selection["variant"]]
+    variant = data["variants"][selection["variant"] - 1]
     size = variant["resolution"] or "audio only"
     lines = [
         "With these settings a download would take:",

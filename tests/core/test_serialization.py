@@ -30,13 +30,13 @@ def test_a_master_playlist_is_described_with_its_tracks_and_the_choice() -> None
     assert data["type"] == "master"
     assert [v["resolution"] for v in data["variants"]] == ["1280x720", "1920x1080", None]
     assert data["variants"][1]["codecs"] == ["avc1.640028", "mp4a.40.2"]
-    assert data["variants"][1]["index"] == 1
+    assert data["variants"][1]["index"] == 2
     assert data["audio_tracks"][2]["language"] == "fr"
     assert data["audio_tracks"][0]["channels"] == "2"
     assert data["audio_tracks"][0]["separate"] is True
     assert data["subtitle_tracks"][1]["forced"] is True
     assert data["selection"] == {
-        "variant": 1,
+        "variant": 2,
         "audio": ["Français"],
         "subtitles": [],
         "notes": [],

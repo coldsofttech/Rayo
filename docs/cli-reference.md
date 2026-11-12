@@ -48,6 +48,10 @@ $ rayohx info [OPTIONS] {URL}
 * `--quality <str>`: best, worst, auto (up to 1080p), or a height such as 720p (the best at or below it).  [env var: RAYOHX_QUALITY; default: best]
 * `--max-resolution <str>`: Never pick a picture taller than this, for example 1080p.  [env var: RAYOHX_MAX_RESOLUTION]
 * `--max-bitrate <str>`: Never pick a stream above this many bits per second, for example 4M.  [env var: RAYOHX_MAX_BITRATE]
+* `--variant <int range>`: Download this stream, by its number in `rayohx info` (the first is 1).  [env var: RAYOHX_VARIANT; x&gt;=1]
+* `--resolution <str>`: Only streams with exactly this size, such as 1280x720.  [env var: RAYOHX_RESOLUTION]
+* `--bandwidth <str>`: Only streams with exactly this bit rate, in bits per second (for example 2800000).  [env var: RAYOHX_BANDWIDTH]
+* `--variant-name <str>`: Only streams with exactly this name (ignoring case).  [env var: RAYOHX_VARIANT_NAME]
 * `-a, --audio <str>`: Audio language to download (repeat for several), for example en.
 * `--audio-name <str>`: Download the audio track with this exact name (repeatable).
 * `-s, --subtitles <str>`: Subtitle language to save beside the video (repeat for several).
@@ -92,6 +96,10 @@ $ rayohx download [OPTIONS] {URL}
 * `--quality <str>`: best, worst, auto (up to 1080p), or a height such as 720p (the best at or below it).  [env var: RAYOHX_QUALITY; default: best]
 * `--max-resolution <str>`: Never pick a picture taller than this, for example 1080p.  [env var: RAYOHX_MAX_RESOLUTION]
 * `--max-bitrate <str>`: Never pick a stream above this many bits per second, for example 4M.  [env var: RAYOHX_MAX_BITRATE]
+* `--variant <int range>`: Download this stream, by its number in `rayohx info` (the first is 1).  [env var: RAYOHX_VARIANT; x&gt;=1]
+* `--resolution <str>`: Only streams with exactly this size, such as 1280x720.  [env var: RAYOHX_RESOLUTION]
+* `--bandwidth <str>`: Only streams with exactly this bit rate, in bits per second (for example 2800000).  [env var: RAYOHX_BANDWIDTH]
+* `--variant-name <str>`: Only streams with exactly this name (ignoring case).  [env var: RAYOHX_VARIANT_NAME]
 * `-a, --audio <str>`: Audio language to download (repeat for several), for example en.
 * `--audio-name <str>`: Download the audio track with this exact name (repeatable).
 * `-s, --subtitles <str>`: Subtitle language to save beside the video (repeat for several).
@@ -122,6 +130,7 @@ $ rayohx download [OPTIONS] {URL}
 * `--workspace <path>`: A folder for working files (default: beside the output).  [env var: RAYOHX_WORKSPACE]
 * `--buffer-size <str>`: Memory for the segment buffer, for example 64M.  [env var: RAYOHX_BUFFER_SIZE]
 * `--max-temp-size <str>`: Most working disk space to use, for example 2G.  [env var: RAYOHX_MAX_TEMP_SIZE]
+* `--space-check / --no-space-check`: Check that the disk has room (turn off if the free space is reported wrongly).  [env var: RAYOHX_SPACE_CHECK; default: space-check]
 * `--json`: Print the result as JSON on stdout, for other programs.
 * `--progress <str>`: How to show progress: auto (a bar on a terminal, lines otherwise), bar, plain, none.  [env var: RAYOHX_PROGRESS; default: auto]
 * `--help`: Show this message and exit.

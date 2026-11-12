@@ -99,6 +99,7 @@ class MediaDownload:
         self._download_id = download_id or uuid.uuid4().hex[:12]
         self._cancel = cancel
         self._clock = clock
+        self._space_warned = False
 
     @property
     def download_id(self) -> str:
@@ -293,6 +294,11 @@ class MediaDownload:
         output_dir: Path,
         workspace_dir: Path,
     ) -> None:
+        if not self._config.storage.check_space:
+            if not self._space_warned:
+                logger.warning("The disk space check is turned off.")
+                self._space_warned = True
+            return
         estimate = estimator.total_bytes()
         if not estimate:
             return

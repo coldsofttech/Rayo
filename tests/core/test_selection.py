@@ -2,6 +2,7 @@ import pytest
 
 from rayohx import (
     AudioTrack,
+    ConfigurationError,
     MasterPlaylist,
     PlaylistError,
     Resolution,
@@ -263,3 +264,82 @@ def test_video_only_skips_audio_and_subtitle_tracks() -> None:
     assert any("Only the video" in note for note in chosen.notes)
     assert SelectionConfig().as_dict()["video_only"] is False
     assert wanted.as_dict()["video_only"] is True
+
+
+# --- exact choices -------------------------------------------------------------------------------
+
+
+def _ladder() -> list[Variant]:
+    return [
+        Variant(uri="a.m3u8", bandwidth=800_000, resolution=Resolution(640, 360), name="low"),
+        Variant(
+            uri="b.m3u8", bandwidth=2_800_000, average_bandwidth=2_500_000,
+            resolution=Resolution(1280, 720), name="Mid",
+        ),
+        Variant(uri="c.m3u8", bandwidth=3_500_000, resolution=Resolution(1280, 720), name="alt"),
+        Variant(uri="d.m3u8", bandwidth=5_000_000, resolution=Resolution(1920, 1080)),
+    ]  # fmt: skip
+
+
+def _pick(**options: object) -> tuple[str, list[str]]:
+    notes: list[str] = []
+    chosen = select_variant(_ladder(), SelectionConfig(**options), notes)  # type: ignore[arg-type]
+    return chosen.uri, notes
+
+
+def test_a_stream_is_chosen_by_its_number() -> None:
+    assert _pick(variant=1)[0] == "a.m3u8"
+    assert _pick(variant=4)[0] == "d.m3u8"
+
+
+def test_a_number_outside_the_list_is_refused() -> None:
+    with pytest.raises(ConfigurationError, match="no stream number 5"):
+        _pick(variant=5)
+
+
+def test_a_number_cannot_be_combined_with_other_choices() -> None:
+    for extra in (
+        {"resolution": "1280x720"},
+        {"bandwidth": 1},
+        {"max_bitrate": 1},
+        {"variant_name": "x"},
+    ):
+        with pytest.raises(ConfigurationError, match="by itself"):
+            SelectionConfig(variant=1, **extra)
+
+
+def test_an_exact_size_picks_the_best_of_the_streams_with_that_size() -> None:
+    uri, notes = _pick(resolution="1280x720")
+    assert uri == "c.m3u8"
+    assert "2 streams" in notes[0]
+    assert _pick(resolution="1280X720", quality="worst")[0] == "b.m3u8"
+
+
+def test_an_exact_bandwidth_matches_bandwidth_or_average() -> None:
+    assert _pick(bandwidth=800_000)[0] == "a.m3u8"
+    assert _pick(bandwidth=2_500_000)[0] == "b.m3u8"
+
+
+def test_a_name_matches_ignoring_case() -> None:
+    assert _pick(variant_name="mid")[0] == "b.m3u8"
+
+
+def test_choices_narrow_each_other() -> None:
+    assert _pick(resolution="1280x720", variant_name="alt")[0] == "c.m3u8"
+
+
+def test_a_choice_with_no_match_lists_the_streams() -> None:
+    with pytest.raises(ConfigurationError) as info:
+        _pick(resolution="100x1000")
+    assert "No stream has size 100x1000" in str(info.value)
+    assert "1: 640x360" in (info.value.hint or "")
+    with pytest.raises(ConfigurationError, match="bandwidth 7"):
+        _pick(bandwidth=7)
+
+
+def test_the_new_choices_are_validated() -> None:
+    for bad in ({"resolution": "720p"}, {"variant": 0}, {"bandwidth": 0}, {"variant_name": " "}):
+        with pytest.raises(ConfigurationError):
+            SelectionConfig(**bad)
+    assert SelectionConfig(resolution=" 1280x720 ").resolution == "1280x720"
+    assert SelectionConfig(variant=2).as_dict()["variant"] == 2
