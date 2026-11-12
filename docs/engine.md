@@ -57,12 +57,14 @@ Modules are added phase by phase under `src/rayohx/`. The first group exists; th
 | `containers` | Recognising and checking MPEG-TS and fMP4 data |
 | `output` | Choosing the output name and format |
 | `controller` | `Downloader` and `download()`: a web address to a finished file |
+| `delivery` | The ways a stream becomes a file: plain, built-in remux, FFmpeg, and subtitles |
+| `mux/` | The built-in remuxer: MPEG-TS demuxer, codec parsers, fragmented-MP4 writer and muxer, WebVTT, FFmpeg wrapper |
 | `cancellation` | `CancellationToken` for cooperative cancellation |
 | `events` | The download state machine and the `EventBus` |
 | `redaction` | Hides secrets in URLs, headers and text |
 | `logs` | Standard `logging` setup with a redaction filter |
 
-Still to come: the native muxer, separate audio and subtitle tracks, and the optional FFmpeg fallback.
+Still to come: the command line over `download()`, and packaging.
 
 ## Conventions
 
@@ -77,14 +79,69 @@ The greeting example (`core.py`, `greetings.py`) is temporary. It stays only unt
 
 ## Output without FFmpeg
 
-RayoHX does its own container handling and never bundles FFmpeg.
+RayoHX does its own container handling and never bundles or links FFmpeg. It *remuxes* (re-wraps compressed audio and video into another container) and never *transcodes*.
 
-1. MPEG-TS segments are joined into a `.ts` file, and fMP4 segments (init segment plus fragments) into a fragmented `.mp4`. Neither step decodes anything.
-2. A native muxer turns MPEG-TS into fragmented MP4 for H.264 and HEVC video with AAC, AC-3, E-AC-3 or MP3 audio. It is written from the public specifications.
-3. WebVTT subtitles are written as a sidecar file.
-4. For anything else, RayoHX uses an FFmpeg already installed on the machine, when found on `PATH`. It is a prerequisite for those cases only, and it runs as a separate program, never linked or shipped.
+| Source | Output | How |
+| --- | --- | --- |
+| MPEG-TS, one stream | `.ts` | Segments joined in order |
+| Fragmented MP4, one stream | `.mp4` | Initialization section, then the fragments |
+| MPEG-TS, one stream | `.mp4` | Built-in remuxer |
+| Any stream with separate audio | `.mp4` | Built-in remuxer joins the tracks |
+| Codecs the built-in remuxer cannot copy | `.mp4` | An FFmpeg you have installed, if there is one |
+| WebVTT subtitles | `<name>.<language>.vtt` | Segments merged and aligned with the video |
 
-RayoHX remuxes and never transcodes. When no route exists, it raises `OutputFormatError` and says which stream or codec is the problem.
+## The built-in remuxer
+
+It is written from the public specifications (ISO/IEC 13818-1, 14496-12, 14496-14, 14496-15, 23008-2 and the Dolby and MPEG audio formats) and lives in `rayohx.mux`. The output is always a *fragmented* MP4, which can be written while the download is still running and needs no second pass over the file.
+
+**Codecs copied from MPEG-TS:** H.264 and HEVC video; AAC (ADTS), AC-3, E-AC-3 (with dependent substreams) and MPEG audio (MP3 and MP2). **From fragmented MP4:** any codec, because the compressed data is passed through untouched: only the track header is copied (with a new track id and language).
+
+How it works:
+
+1. The demuxer follows the program tables, reassembles each stream's PES packets and reads their timestamps (33-bit values, unwrapped past the rollover).
+2. A parser per codec turns each access unit into a sample and builds the codec configuration (`avcC`, `hvcC`, `esds`, `dac3`, `dec3`). Parameter sets move to the sample entry and out of the samples. Video before the first keyframe is dropped.
+3. A fragmenter cuts each track into fragments (video at keyframes after at least a second, audio every two seconds) and closes up jumps in time.
+4. The muxer holds each track's fragments until it knows no earlier fragment is coming from another track, then writes them oldest first, so audio and video stay interleaved. The file's timeline starts near zero while the offset between audio and video is kept exactly.
+5. A track that is stored apart (a separate audio rendition) is downloaded to a hidden file beside the output and read back from disk as the muxer needs it, so it never has to fit in memory. The hidden file is removed afterwards, whatever happens.
+
+**What a muxed download does not do:** resume. The remuxer's state cannot be saved, so an interrupted muxed download starts again. Plain downloads keep resuming as before. Progress for a stream with separate audio is reported per track (audio first, then video).
+
+**Limits.** AAC with a custom channel layout, fragmented MP4 that holds several tracks in one fragment, and fragments with absolute data offsets are refused with a clear message. A change of video size or codec part-way through is not supported. Subtitles are saved only when they are WebVTT text; subtitles stored inside MP4 are not.
+
+### How it is checked
+
+The remuxer's output is compared with FFmpeg's, which did not write it. The tests (they need `ffmpeg` and `ffprobe` only to run these comparisons and skip them otherwise) check that for every supported codec combination:
+
+- `ffprobe` identifies the codecs, picture size and sample rate;
+- `ffmpeg` decodes the whole file without a single error;
+- the **decoded pictures are bit-identical** to the original stream's, frame by frame (100 of 100 frames, and 3,000 of 3,000 in a two-minute 720p test);
+- the **decoded sound is bit-identical**;
+- the audio and video start times keep the same offset as in the source;
+- the same holds when separate audio and video tracks are joined, from both MPEG-TS and fragmented MP4 sources.
+
+The test media is real FFmpeg output, regenerated by `scripts/make_media_fixtures.py`.
+
+### Speed and memory
+
+Measured on one core, in pure Python, reading the stream from disk a megabyte at a time:
+
+| Stream | Size | Speed (three runs) |
+| --- | --- | --- |
+| 2 minutes, 720p, 6 Mbit/s, H.264 and AAC | 96 MB | 131, 148 and 146 MB/s |
+| 1 minute, 1080p, 20 Mbit/s, H.264 and AC-3 | 160 MB | 133, 141 and 134 MB/s |
+
+The whole process stayed at about 68 MB of memory for both, so memory does not grow with the size of the stream: it holds a few segments plus the fragments waiting for another track, which are capped at 64 MiB. Remuxing is therefore much faster than any realistic download. These figures are from one machine and are meant as a rough guide, not a promise.
+
+## FFmpeg, when it is needed
+
+FFmpeg is an **optional prerequisite**, never required and never shipped, because of its licensing. It is used only when:
+
+- the stream has a codec the built-in remuxer cannot copy (for example MPEG-2 video), and an FFmpeg is found on the `PATH` or at `OutputConfig.ffmpeg_path`; or
+- you ask for it with `RemuxBackend.FFMPEG`.
+
+The choice is made before the download starts, by reading the first segment's program map, so a download never changes tool half-way. With `RemuxBackend.NATIVE` FFmpeg is never used, and with `RemuxBackend.AUTO` (the default) it is used only as the fallback. When the stream needs FFmpeg and none is installed, the error says so and names the codec.
+
+FFmpeg runs as a separate program on files that have already been downloaded, with fixed arguments and no shell. It is only asked to copy streams (`-c copy`); the one change it makes is rewriting the headers of AAC from a transport stream, which does not alter the sound. If it fails, its last message is shown (with secrets removed) and nothing is left behind. Because FFmpeg needs whole files, this route stores the pieces on disk before joining them.
 
 ## Licensing
 
@@ -195,4 +252,4 @@ Anything that needs remuxing (MPEG-TS into MP4, other containers) is refused wit
 
 **Checks.** Each segment is checked against the stream's format as it arrives, so an error page, a cut-off file or the output of a wrong key is caught at once with the segment number. When the file is finished it is validated before it is put in place: MPEG-TS gets a spot check of up to 2000 packets spread over the file (reading all of a large file would cost as much as downloading it), and fragmented MP4 gets a walk through every top-level box, requiring the initialization (`moov`), at least one fragment (`moof`) and its media data (`mdat`). A file that fails is never put in place, and nothing is kept for resuming since the download itself finished. Validation can be switched off with `OutputConfig(validate=False)`.
 
-**Not yet.** Streams with a separate audio track, subtitles, and TS-to-MP4 need the muxer. Until then the controller refuses them with a clear message; `video_only` downloads the video alone.
+**Separate tracks.** A master playlist whose selected variant keeps its audio in a separate track is joined into one MP4 (`format` must be MP4 or automatic; a `.ts` name is refused with an explanation because a transport stream file cannot be made from separate tracks). The playlists of every track are loaded before any media is downloaded, so a missing track fails at once. Audio tracks are chosen with `audio_languages` and `audio_names`; `video_only` skips them. Subtitle tracks are saved next to the output as `<name>.<language>.vtt`, aligned with the video (the output's start offset is taken off every cue, and cues repeated across segment boundaries appear once). A file that already exists is refused before anything is downloaded.

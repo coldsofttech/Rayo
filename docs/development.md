@@ -93,3 +93,9 @@ Publishing uses [trusted publishing](https://docs.pypi.org/trusted-publishers/),
 2. Create an environment named `pypi`. The settings script does this and restricts it to `v*` tags.
 3. Bump `__version__` in `src/<package>/__init__.py` and update `CHANGELOG.md`.
 4. Publish a GitHub release tagged `v<version>`. The workflow fails if the tag and version differ.
+
+## Media test files
+
+The muxer tests use small real MPEG-TS and fragmented MP4 files in `tests/fixtures/media` (about 860 KB), including two complete HLS sets with separate audio. They were made by FFmpeg so that RayoHX's output can be compared with something it did not write. To regenerate them, run `python scripts/make_media_fixtures.py` (needs `ffmpeg` with libx264 and libx265).
+
+`ffmpeg` and `ffprobe` are used by some tests only as a reference to compare against, and those tests are skipped when they are not installed. They are never needed to use or build RayoHX.

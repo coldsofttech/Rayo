@@ -18,32 +18,37 @@ import httpx
 from rayohx.cancellation import CancellationToken
 from rayohx.config import DownloadConfig, validate_url
 from rayohx.containers import sniff_container
-from rayohx.enums import ContainerFormat, DownloadState, EventType, OutputFormat
+from rayohx.delivery import Delivery, Rendition, check_free, subtitle_path
+from rayohx.enums import ContainerFormat, DownloadState, EventType, OutputFormat, RemuxBackend
 from rayohx.errors import (
     CancellationError,
     DownloadError,
     InvalidPlaylistError,
     OutputFormatError,
     RayoHXError,
+    UnsupportedCodecError,
 )
 from rayohx.events import DownloadEvent, DownloadStateMachine, EventBus
 from rayohx.fetcher import HlsSegmentFetcher
 from rayohx.http_client import HttpClient
 from rayohx.inspection import inspect_playlist
 from rayohx.logs import set_download_id
-from rayohx.media_download import DownloadSummary, MediaDownload
+from rayohx.media_download import DownloadSummary
 from rayohx.models import (
     DownloadProgress,
     DownloadResult,
     MasterPlaylist,
     MediaPlaylist,
     OutputInfo,
+    SegmentData,
+    SubtitleTrack,
 )
-from rayohx.output import plan_output
+from rayohx.mux.ffmpeg import find_ffmpeg
+from rayohx.mux.source import probe_codecs, probe_streams
+from rayohx.output import OutputPlan, plan_output
 from rayohx.playlist import is_hls_playlist, parse_playlist
 from rayohx.redaction import redact_text, redact_url
 from rayohx.selection import StreamSelection, select_stream
-from rayohx.sinks import DirectorySink, FileSink, OutputSink
 
 logger = logging.getLogger(__name__)
 
@@ -162,38 +167,136 @@ class Downloader:
                 media = playlist
 
             self._move(DownloadState.PREPARING)
-            _require_single_stream(stream)
             container = media.container
             if container is ContainerFormat.UNKNOWN:
                 container = _probe_container(client, media)
+            audios = self._renditions(client, stream)
+            if config.output.format is OutputFormat.SEGMENTS and (
+                audios or (stream and stream.subtitle_tracks)
+            ):
+                raise OutputFormatError(
+                    "Separate audio and subtitle tracks cannot be saved as separate segments.",
+                    hint="Set video_only to download just the video.",
+                )
             plan = plan_output(
                 path=self._output,
                 requested=config.output.format,
                 container=container,
                 url=self._url,
+                allow_remux=True,
+                merge=bool(audios),
             )
-            sink: OutputSink = (
-                DirectorySink(plan.path, container, overwrite=config.output.overwrite)
-                if plan.is_directory
-                else FileSink(plan.path, overwrite=config.output.overwrite)
-            )
+            subtitles = self._subtitle_jobs(client, stream, plan)
+            # Refuse before downloading anything if a file we will write is already there.
+            targets = [path for _, _, path in subtitles]
+            if not plan.is_directory:
+                targets.append(plan.path)
+            check_free(targets, config.output.overwrite)
+            ffmpeg_path = self._choose_backend(client, media, container, audios, plan)
 
+            delivery = Delivery(client, config, self._bus, self._id, self._token, self._finalizing)
+            variant = stream.variant if stream else None
             self._move(DownloadState.DOWNLOADING)
-            summary = MediaDownload(
-                media,
-                client=client,
-                config=config,
-                sink=sink,
-                variant=stream.variant if stream else None,
-                events=self._bus,
-                download_id=self._id,
-                cancel=self._token,
-                container=container,
-                on_finalizing=self._finalizing,
-            ).run()
-        output = _output_info(plan.path, summary, container)
+            shift: float | None = None
+            if ffmpeg_path is not None:
+                video_audio = _audio_codecs(client, media, container)
+                audios = [
+                    dataclasses.replace(a, codecs=_audio_codecs(client, a.media, a.container))
+                    for a in audios
+                ]
+                summary = delivery.with_ffmpeg(
+                    media, container, plan, variant, audios, ffmpeg_path, video_audio
+                )
+                result_container = ContainerFormat.FMP4
+            elif plan.mux:
+                summary, shift = delivery.native_mux(media, container, plan, variant, audios)
+                result_container = ContainerFormat.FMP4
+            else:
+                summary = delivery.plain(media, container, plan, variant)
+                result_container = container
+            if subtitles:
+                delivery.subtitles(subtitles, shift or 0.0)
+        output = _output_info(plan.path, summary, result_container)
         self._emit(EventType.FINALIZATION_COMPLETED, message=str(output.path))
         return output, summary.progress
+
+    # --- preparing -------------------------------------------------------------------------
+
+    def _renditions(self, client: HttpClient, stream: StreamSelection | None) -> list[Rendition]:
+        """Load the playlists of the separate audio tracks that have to be joined in."""
+        renditions = []
+        for track in stream.audio_tracks if stream else ():
+            assert track.uri is not None  # noqa: S101 - selection keeps only tracks with an address
+            media = _load_media(client, track.uri)
+            container = media.container
+            if container is ContainerFormat.UNKNOWN:
+                container = _probe_container(client, media)
+            if container not in {ContainerFormat.MPEG_TS, ContainerFormat.FMP4}:
+                raise OutputFormatError(
+                    f"The audio track {track.name!r} is in a form that cannot be joined in.",
+                    hint="Only MPEG-TS and fragmented MP4 audio are supported.",
+                )
+            self._emit(EventType.PLAYLIST_LOADED, data={"kind": "media", "audio": track.name})
+            renditions.append(Rendition(track, media, container))
+        return renditions
+
+    def _subtitle_jobs(
+        self, client: HttpClient, stream: StreamSelection | None, plan: OutputPlan
+    ) -> list[tuple[SubtitleTrack, MediaPlaylist, Path]]:
+        """Load the playlists of the subtitle tracks and decide where each is saved."""
+        jobs = []
+        used: set[Path] = set()
+        for track in stream.subtitle_tracks if stream else ():
+            assert track.uri is not None  # noqa: S101 - selection keeps only tracks with an address
+            media = _load_media(client, track.uri)
+            if media.container not in {ContainerFormat.WEBVTT, ContainerFormat.UNKNOWN}:
+                raise OutputFormatError(
+                    f"The subtitles {track.name!r} are not WebVTT text, which is all that can "
+                    "be saved.",
+                    hint="Leave subtitles out, or set video_only.",
+                )
+            self._emit(EventType.PLAYLIST_LOADED, data={"kind": "media", "subtitles": track.name})
+            jobs.append((track, media, subtitle_path(plan.path, track, used)))
+        return jobs
+
+    def _choose_backend(
+        self,
+        client: HttpClient,
+        media: MediaPlaylist,
+        container: ContainerFormat,
+        audios: list[Rendition],
+        plan: OutputPlan,
+    ) -> Path | None:
+        """Pick what re-wraps the stream: ``None`` for the built-in remuxer, else an FFmpeg."""
+        if not plan.mux:
+            return None
+        wanted = self._config.output.remux_backend
+        executable = find_ffmpeg(self._config.output.ffmpeg_path)
+        if wanted is RemuxBackend.FFMPEG:
+            if executable is None:
+                raise OutputFormatError(
+                    "FFmpeg was asked for but could not be found.",
+                    hint="FFmpeg is an optional prerequisite: install it, or set its path in "
+                    "the output settings.",
+                )
+            return executable
+        inputs = [(media, container), *((audio.media, audio.container) for audio in audios)]
+        try:
+            for item, kind in inputs:
+                if kind is ContainerFormat.MPEG_TS:
+                    probe_codecs(_first_segment(client, item).media)
+        except UnsupportedCodecError as exc:
+            if wanted is RemuxBackend.AUTO and executable is not None:
+                logger.info("Using FFmpeg because the stream uses %s.", exc.codec)
+                return executable
+            hint = (
+                "Set the remux backend to auto and install FFmpeg, an optional prerequisite."
+                if wanted is RemuxBackend.NATIVE
+                else "FFmpeg is not installed. It is an optional prerequisite for streams like "
+                "this: install it, or set its path in the output settings."
+            )
+            raise UnsupportedCodecError(exc.codec, hint=hint) from exc
+        return None
 
     def _finalizing(self) -> None:
         self._move(DownloadState.FINALIZING)
@@ -289,30 +392,25 @@ def _load_media(client: HttpClient, url: str) -> MediaPlaylist:
     return playlist
 
 
-def _require_single_stream(stream: StreamSelection | None) -> None:
-    """Refuse streams whose tracks would have to be merged, which needs the muxer."""
-    if stream is None:
-        return
-    if stream.audio_tracks:
-        names = ", ".join(repr(track.name) for track in stream.audio_tracks)
-        raise OutputFormatError(
-            f"This stream keeps its audio in a separate track ({names}), which has to be merged "
-            "with the video. Merging is not available yet.",
-            hint="Set video_only to download the video without that audio.",
-        )
-    if stream.subtitle_tracks:
-        raise OutputFormatError(
-            "Saving subtitles is not available yet.",
-            hint="Leave subtitles out, or set video_only.",
-        )
+def _first_segment(client: HttpClient, media: MediaPlaylist) -> SegmentData:
+    return HlsSegmentFetcher(client, media.segments).fetch(0)
+
+
+def _audio_codecs(
+    client: HttpClient, media: MediaPlaylist, container: ContainerFormat
+) -> tuple[str, ...]:
+    """The audio codecs in a transport stream. Fragmented MP4 needs no fix, so it has none."""
+    if container is not ContainerFormat.MPEG_TS:
+        return ()
+    streams = probe_streams(_first_segment(client, media).media)
+    return tuple(info.codec for info in streams if info.kind == "audio")
 
 
 def _probe_container(client: HttpClient, media: MediaPlaylist) -> ContainerFormat:
     """Tell the segment format from the first segment when the playlist does not say."""
     if not media.segments:
         return ContainerFormat.UNKNOWN
-    first = HlsSegmentFetcher(client, media.segments).fetch(0)
-    return sniff_container(first.media)
+    return sniff_container(_first_segment(client, media).media)
 
 
 def _output_info(path: Path, summary: DownloadSummary, container: ContainerFormat) -> OutputInfo:

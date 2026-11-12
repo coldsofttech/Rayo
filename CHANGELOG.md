@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - `download(url, output)` downloads a stream to a file in one call, checks the result and reports progress, and a cancelled download returns a result instead of an error.
 - MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`; a name that does not match is refused instead of mislabelling the file.
+- Streams whose audio is a separate track are joined into one MP4 automatically, in the language chosen, and MPEG-TS streams can be saved as MP4. The re-wrapping is built in and nothing is re-encoded.
+- Subtitles are saved next to the video as `.vtt` files that line up with it.
+- An installed FFmpeg is used as an optional fallback for codecs the built-in remuxer cannot copy. It is never required or shipped.
 - `video_only` downloads just the video of a stream that has a separate audio track.
 - Downloading a stream's segments in parallel into one file, with AES-128 decryption, a choice of storage strategies, accurate disk-space checks and no need for twice the output size.
 - Interrupted or cancelled downloads can continue where they stopped, and leave only what resuming needs.

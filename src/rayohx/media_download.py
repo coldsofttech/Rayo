@@ -65,8 +65,9 @@ class MediaDownload:
     ``cancel`` should be the same token the ``client`` was built with, so that waiting requests
     stop as soon as the download is cancelled.
 
-    When ``container`` is given, every segment is checked against it, and (with
-    ``config.output.validate``) the finished output is validated before it is put in place.
+    When ``container`` is given, every segment is checked against it. With
+    ``config.output.validate`` the finished output is validated before it is put in place, as
+    ``output_container`` (the same as ``container`` unless the segments are re-wrapped).
     ``on_finalizing`` is called once all segments are written, just before that final step.
     """
 
@@ -82,10 +83,12 @@ class MediaDownload:
         download_id: str | None = None,
         cancel: CancellationToken | None = None,
         container: ContainerFormat | None = None,
+        output_container: ContainerFormat | None = None,
         on_finalizing: Callable[[], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._container = container
+        self._output_container = output_container or container
         self._on_finalizing = on_finalizing
         self._playlist = playlist
         self._client = client
@@ -247,7 +250,7 @@ class MediaDownload:
         )
 
     def _validator(self) -> Callable[[Path], None] | None:
-        container = self._container
+        container = self._output_container
         if container is None or not self._config.output.validate:
             return None
         return lambda path: validate_output(container, path)

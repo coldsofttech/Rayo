@@ -72,6 +72,8 @@ class OutputPlan:
     path: Path
     format: OutputFormat
     container: ContainerFormat
+    #: Whether the segments have to be re-wrapped into a new MP4 rather than just joined.
+    mux: bool = False
 
     @property
     def is_directory(self) -> bool:
@@ -86,6 +88,8 @@ def plan_output(
     container: ContainerFormat,
     url: str,
     directory: Path | None = None,
+    allow_remux: bool = False,
+    merge: bool = False,
 ) -> OutputPlan:
     """Choose the output path and format for a stream.
 
@@ -95,6 +99,8 @@ def plan_output(
         container: What the segments are.
         url: The address downloaded; used to name the file when ``path`` is ``None``.
         directory: Where an unnamed output goes. Defaults to the current folder.
+        allow_remux: Whether MPEG-TS may be re-wrapped into MP4.
+        merge: Whether separate audio tracks have to be joined in, which needs an MP4.
 
     Raises:
         OutputFormatError: If the stream cannot be written in that format without remuxing, or
@@ -129,21 +135,35 @@ def plan_output(
             f"The file name ends in {path.suffix!r} but the format {requested.value!r} "
             "was asked for."
         )
-    chosen = requested if requested is not OutputFormat.AUTO else (from_name or native_format)
+    if merge:
+        if requested not in (OutputFormat.AUTO, OutputFormat.MP4) or from_name is OutputFormat.TS:
+            raise OutputFormatError(
+                "Joining a separate audio track into the video needs an MP4 file.",
+                hint="Save it as .mp4.",
+            )
+        chosen = OutputFormat.MP4
+    else:
+        chosen = requested if requested is not OutputFormat.AUTO else (from_name or native_format)
 
-    if chosen is not native_format:
+    mux = merge or (chosen is OutputFormat.MP4 and container is ContainerFormat.MPEG_TS)
+    if chosen is OutputFormat.TS and container is not ContainerFormat.MPEG_TS:
         raise OutputFormatError(
-            f"This stream is {_describe(container)} and cannot be saved as "
-            f"{chosen.value.upper()} without remuxing, which is not available yet.",
+            f"This stream is {_describe(container)} and cannot be saved as TS.",
             hint=f"Save it as {native_suffix} instead.",
         )
-    if path is None:
-        return OutputPlan(
-            (directory or Path.cwd()) / f"{name_from_url(url)}{native_suffix}", chosen, container
+    if mux and not allow_remux:
+        raise OutputFormatError(
+            f"This stream is {_describe(container)} and cannot be saved as "
+            f"{chosen.value.upper()} without remuxing, which is not available.",
+            hint=f"Save it as {native_suffix} instead.",
         )
+    suffix_for_chosen = ".mp4" if chosen is OutputFormat.MP4 else ".ts"
+    if path is None:
+        name = f"{name_from_url(url)}{suffix_for_chosen}"
+        return OutputPlan((directory or Path.cwd()) / name, chosen, container, mux)
     if not suffix:
-        path = path.with_name(path.name + native_suffix)
-    return OutputPlan(path, chosen, container)
+        path = path.with_name(path.name + suffix_for_chosen)
+    return OutputPlan(path, chosen, container, mux)
 
 
 def _describe(container: ContainerFormat) -> str:

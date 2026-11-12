@@ -91,13 +91,16 @@ print(result.output.path, result.output.size_bytes)
 
 To look at a stream without downloading it, use `inspect("https://example.com/master.m3u8")`.
 
-What works today, and what does not yet:
+What works today:
 
-- MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`. A name that does not match what is inside (for example `.mp4` for an MPEG-TS stream) is refused with an explanation, never quietly mislabelled.
+- MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`. A name that does not match what is inside is refused with an explanation, never quietly mislabelled. An MPEG-TS stream can also be saved as `.mp4`.
+- Streams that keep their audio in a separate track are joined into one `.mp4` automatically, with the language set. Choose tracks with `audio="fr"` (or a list), or leave the audio out with `video_only=True`.
+- Subtitles are saved next to the video: `subtitles="en"` gives `video.en.vtt`, lined up with the video.
+- Re-wrapping into MP4 is done by RayoHX itself for H.264 and HEVC video with AAC, AC-3, E-AC-3 and MP3 audio, and nothing is converted or re-encoded. For anything else (MPEG-2 video, for example) an [FFmpeg](https://ffmpeg.org/) that you have installed is used if there is one. FFmpeg is optional and is never installed or shipped by RayoHX.
 - Encrypted streams (plain AES-128) work. Protected (DRM) streams and live streams are refused.
-- Streams that keep their audio in a separate track need a merge step that is not available yet. Add `video_only=True` to download just the video, or save the pieces with `format="segments"`. Subtitles cannot be saved yet.
 - An existing file is never replaced unless you add `overwrite=True`.
 - Use `on_event=` to follow progress, and `cancel=` with a `CancellationToken` to stop a download.
+- A download that is interrupted or cancelled continues where it stopped, except when audio and video are being joined, which starts again.
 
 See the [CLI reference](docs/cli.md) for every command, option and exit code, and the [API guide](docs/api.md) to run the API on its own.
 

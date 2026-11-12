@@ -23,6 +23,7 @@ from rayohx import (
     OutputExistsError,
     OutputFormat,
     OutputFormatError,
+    PlaylistNotFoundError,
     SegmentDownloadError,
     SelectionConfig,
     download,
@@ -271,29 +272,30 @@ def test_worker_threads_log_with_the_download_id(
 # --- things it refuses to do -------------------------------------------------------------------
 
 
-def test_ts_will_not_be_mislabelled_as_mp4(tmp_path: Path) -> None:
-    origin = ts_origin(5)
-    downloader, events = make(origin, tmp_path, output="video.mp4")
+def test_fragmented_mp4_will_not_be_mislabelled_as_ts(tmp_path: Path) -> None:
+    origin = Origin(5, ext="m4s", content="fmp4")
+    downloader, events = make(origin, tmp_path, output="video.ts")
     result = downloader.run()
     assert result.state is DownloadState.FAILED
     assert not result.success
-    assert "cannot be saved as MP4" in (result.error or "")
-    assert ".ts" in (result.error or "")
+    assert "cannot be saved as TS" in (result.error or "")
+    assert ".mp4" in (result.error or "")
     assert isinstance(downloader.exception, OutputFormatError)
     assert not any(name.startswith("seg") for name in origin.log)
-    assert not (tmp_path / "video.mp4").exists()
+    assert not (tmp_path / "video.ts").exists()
     assert milestones(events)[-1] is EventType.DOWNLOAD_FAILED
     assert sorted(path.name for path in tmp_path.iterdir()) == []
 
 
-def test_a_separate_audio_track_is_explained_not_dropped(tmp_path: Path) -> None:
+def test_a_missing_audio_playlist_stops_the_download_before_any_video_is_fetched(
+    tmp_path: Path,
+) -> None:
     origin = ts_origin(4)
     origin.files = {"master.m3u8": DEMUXED.encode()}
-    downloader, _ = make(origin, tmp_path, url=BASE + "master.m3u8")
+    downloader, _ = make(origin, tmp_path, url=BASE + "master.m3u8", output="video.mp4")
     result = downloader.run()
     assert result.state is DownloadState.FAILED
-    assert "separate track" in (result.error or "")
-    assert "video_only" in (result.error or "")
+    assert "playlist was not found" in (result.error or "")
     assert not any(name.startswith("seg") for name in origin.log)
 
 
@@ -313,7 +315,7 @@ def test_video_only_skips_separate_audio(tmp_path: Path) -> None:
     assert any("video" in note for note in selected.data["notes"])
 
 
-def test_requested_subtitles_are_refused_for_now(tmp_path: Path) -> None:
+def test_a_missing_subtitle_playlist_stops_the_download(tmp_path: Path) -> None:
     origin = ts_origin(4)
     origin.files = {"master.m3u8": WITH_SUBTITLES.encode()}
     downloader, _ = make(
@@ -324,7 +326,8 @@ def test_requested_subtitles_are_refused_for_now(tmp_path: Path) -> None:
     )
     result = downloader.run()
     assert result.state is DownloadState.FAILED
-    assert "subtitles" in (result.error or "").lower()
+    assert "playlist was not found" in (result.error or "")
+    assert not any(name.startswith("seg") for name in origin.log)
 
 
 def test_an_existing_file_is_not_replaced(tmp_path: Path) -> None:
@@ -535,11 +538,11 @@ def test_download_audio_and_subtitle_options_accept_one_or_several_languages(
     tmp_path: Path, served: Origin
 ) -> None:
     served.files["master.m3u8"] = WITH_SUBTITLES.encode()
-    with pytest.raises(OutputFormatError, match="subtitles"):
+    with pytest.raises(PlaylistNotFoundError):  # the playlist is looked up: the option reached it
         download(BASE + "master.m3u8", tmp_path / "a.ts", subtitles=["en", "fr"])
     served.files["master.m3u8"] = DEMUXED.encode()
-    with pytest.raises(OutputFormatError, match="separate track"):
-        download(BASE + "master.m3u8", tmp_path / "b.ts", audio="en")
+    with pytest.raises(PlaylistNotFoundError):
+        download(BASE + "master.m3u8", tmp_path / "b.mp4", audio="en")
     result = download(BASE + "master.m3u8", tmp_path / "c.ts", audio="en", video_only=True)
     assert result.success
 

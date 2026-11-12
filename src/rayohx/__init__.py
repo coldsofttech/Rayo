@@ -46,6 +46,7 @@ from rayohx.errors import (
     RayoHXError,
     SegmentDownloadError,
     TLSError,
+    UnsupportedCodecError,
     UnsupportedPlaylistError,
     WorkspaceLockedError,
 )
@@ -158,6 +159,7 @@ __all__ = [
     "StreamSink",
     "SubtitleTrack",
     "TLSError",
+    "UnsupportedCodecError",
     "UnsupportedPlaylistError",
     "Variant",
     "VideoTrack",

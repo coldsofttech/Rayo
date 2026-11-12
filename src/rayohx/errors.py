@@ -170,6 +170,17 @@ class OutputFormatError(OutputError):
     """The stream cannot be written in the requested format."""
 
 
+class UnsupportedCodecError(OutputFormatError):
+    """The stream uses a codec the built-in remuxer cannot copy into an MP4 file."""
+
+    def __init__(self, codec: str, *, hint: str | None = None) -> None:
+        self.codec = codec
+        super().__init__(
+            f"The stream uses {codec}, which the built-in remuxer does not support.",
+            hint=hint or "FFmpeg, if installed, can handle this stream.",
+        )
+
+
 class FinalizationError(OutputError):
     """Joining or validating the downloaded data failed."""
 
