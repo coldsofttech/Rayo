@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Downloading a stream's segments in parallel into one file, with AES-128 decryption, a choice of storage strategies, accurate disk-space checks and no need for twice the output size.
+- Interrupted or cancelled downloads can continue where they stopped, and leave only what resuming needs.
 - Downloading playlists and media with retries, redirects, proxy, TLS settings, a speed limit and cancellation.
 - `inspect(url)` shows a stream's variants and tracks without downloading it.
 - Reading HLS playlists, including audio and subtitle tracks, encryption, byte ranges and fMP4.

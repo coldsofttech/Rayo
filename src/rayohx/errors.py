@@ -132,6 +132,14 @@ class SegmentDownloadError(DownloadError):
         super().__init__(f"Segment {index} failed ({reason}): {self.url}", hint=hint)
 
 
+class DecryptionError(DownloadError):
+    """A segment could not be decrypted, usually because the key is wrong."""
+
+
+class WorkspaceLockedError(DownloadError):
+    """Another download is already using this working folder."""
+
+
 class InvalidStateTransitionError(DownloadError):
     """A download was asked to move to a state it cannot reach from where it is."""
 

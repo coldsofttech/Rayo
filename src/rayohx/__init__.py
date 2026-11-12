@@ -26,6 +26,7 @@ from rayohx.errors import (
     AuthenticationError,
     CancellationError,
     ConfigurationError,
+    DecryptionError,
     DownloadError,
     FinalizationError,
     HTTPError,
@@ -45,12 +46,15 @@ from rayohx.errors import (
     SegmentDownloadError,
     TLSError,
     UnsupportedPlaylistError,
+    WorkspaceLockedError,
 )
 from rayohx.events import DownloadEvent, DownloadStateMachine, EventBus
+from rayohx.fetcher import HlsSegmentFetcher
 from rayohx.greetings import Greeting, GreetingNotFoundError, GreetingStore
 from rayohx.http_client import HttpClient, HttpResponse
 from rayohx.inspection import PlaylistFetcher, inspect, inspect_playlist
 from rayohx.logs import configure_logging
+from rayohx.media_download import DownloadSummary, MediaDownload
 from rayohx.models import (
     AudioTrack,
     DownloadProgress,
@@ -64,6 +68,7 @@ from rayohx.models import (
     Playlist,
     Resolution,
     Segment,
+    SegmentData,
     SegmentRange,
     StorageMetrics,
     SubtitleTrack,
@@ -73,6 +78,8 @@ from rayohx.models import (
 from rayohx.playlist import is_hls_playlist, parse_playlist
 from rayohx.ratelimit import RateLimiter
 from rayohx.selection import StreamSelection, select_stream
+from rayohx.sinks import FileSink, OutputSink, StreamSink
+from rayohx.state import ResumeState, StateFile
 
 __all__ = [
     "AudioTrack",
@@ -81,6 +88,7 @@ __all__ = [
     "CancellationToken",
     "ConfigurationError",
     "ContainerFormat",
+    "DecryptionError",
     "DownloadConfig",
     "DownloadError",
     "DownloadEvent",
@@ -89,15 +97,18 @@ __all__ = [
     "DownloadResult",
     "DownloadState",
     "DownloadStateMachine",
+    "DownloadSummary",
     "EncryptionInfo",
     "EncryptionMethod",
     "EventBus",
     "EventType",
+    "FileSink",
     "FinalizationError",
     "Greeting",
     "GreetingNotFoundError",
     "GreetingStore",
     "HTTPError",
+    "HlsSegmentFetcher",
     "HttpClient",
     "HttpResponse",
     "InitMap",
@@ -106,6 +117,7 @@ __all__ = [
     "InvalidResponseError",
     "InvalidStateTransitionError",
     "MasterPlaylist",
+    "MediaDownload",
     "MediaPlaylist",
     "NetworkConfig",
     "NetworkConnectionError",
@@ -117,6 +129,7 @@ __all__ = [
     "OutputFormat",
     "OutputFormatError",
     "OutputInfo",
+    "OutputSink",
     "Playlist",
     "PlaylistError",
     "PlaylistFetcher",
@@ -126,20 +139,25 @@ __all__ = [
     "RayoHXError",
     "RemuxBackend",
     "Resolution",
+    "ResumeState",
     "Segment",
+    "SegmentData",
     "SegmentDownloadError",
     "SegmentRange",
     "SegmentState",
     "SelectionConfig",
+    "StateFile",
     "StorageConfig",
     "StorageMetrics",
     "StorageStrategy",
     "StreamSelection",
+    "StreamSink",
     "SubtitleTrack",
     "TLSError",
     "UnsupportedPlaylistError",
     "Variant",
     "VideoTrack",
+    "WorkspaceLockedError",
     "__version__",
     "configure_logging",
     "greet",

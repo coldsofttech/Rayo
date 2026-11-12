@@ -45,12 +45,21 @@ Modules are added phase by phase under `src/rayohx/`. The first group exists; th
 | `inspection` | `inspect_playlist`, which looks at a stream without downloading it |
 | `http_client` | `HttpClient`: the only code that makes network requests |
 | `ratelimit` | A speed limit shared by all workers |
+| `crypto` | AES-128 decryption and key retrieval |
+| `fetcher` | Downloads and decrypts one segment |
+| `storage` | Size estimates, disk-space checks, metrics and the segment stores |
+| `workspace` | The private working folder, its lock and cleanup |
+| `state` | Resume state, saved atomically |
+| `sinks` | `FileSink` and `StreamSink`: where ordered segments go |
+| `progress` | Speed, ETA and progress snapshots |
+| `pipeline` | Parallel fetching with ordered writing |
+| `media_download` | `MediaDownload`: one media playlist from start to finish |
 | `cancellation` | `CancellationToken` for cooperative cancellation |
 | `events` | The download state machine and the `EventBus` |
 | `redaction` | Hides secrets in URLs, headers and text |
 | `logs` | Standard `logging` setup with a redaction filter |
 
-Still to come: `storage`, `scheduler`, `crypto`, `output`.
+Still to come: the output and muxing code (`output`) and the controller that joins everything behind `download()`.
 
 ## Conventions
 
@@ -128,3 +137,30 @@ Picture size is the shorter side, so a 720x1280 portrait stream counts as 720p. 
 **Address guard.** `HttpClient(url_guard=...)` is called with every address, redirect targets included, and can refuse it. A server deployment can use it to block private networks without changing the engine.
 
 Compressed responses are accepted for playlists. Media is requested uncompressed so sizes can be checked.
+
+## Downloading segments
+
+`MediaDownload(playlist, client=..., config=..., sink=...).run()` downloads one media playlist. Workers fetch and decrypt segments in parallel, and the calling thread writes them to the sink in playlist order, so a sink never needs locking. Segments that finish early wait in a *store*. New work starts only while the strategy allows it, so waiting data stays bounded. A segment leaves the store the moment it is written, so working storage never grows to the size of the stream.
+
+| Strategy | Where finished segments wait | Notes |
+| --- | --- | --- |
+| `AUTO` (default) | | `DIRECT` for a resumable file, `STREAMING` for a pipe. |
+| `DIRECT` | Memory, up to twice the worker count past the segment being written | Writes the output file directly. Needs a resumable file output. |
+| `STREAMING` | The same | For pipes and other outputs that cannot resume. Uses no disk. |
+| `BUFFERED` | Memory, up to `buffer_bytes` | Absorbs a slow segment or a slow consumer. |
+| `TEMPORARY` | Files in the working folder | Every finished segment survives a crash. `max_temp_bytes` bounds it. |
+| `HYBRID` | Memory up to `buffer_bytes`, then files, up to `max_temp_bytes` (1 GiB if unset) | Absorbs bursts without growing without limit. |
+
+The next segment to be written is always allowed to start, which rules out a deadlock.
+
+**Disk space.** The check depends on the strategy and never assumes "twice the output". `DIRECT` needs the output size, `STREAMING` and `BUFFERED` to a pipe need no disk, and `TEMPORARY` and `HYBRID` add a bounded working amount. If the output and the working folder are on one disk, their needs are added. The size is estimated from the stream's bitrate (the average bitrate when given) and duration, with 5% added. It is refined from the segments actually downloaded and checked again after three segments, without asking the server for the size of every segment. A full disk during a write becomes `InsufficientStorageError`.
+
+**Output.** `FileSink` writes `<name>.part` beside the output and renames it only when the download is complete. An existing output is refused before anything is downloaded, unless overwriting was allowed. `StreamSink` passes bytes to any function.
+
+**Resume.** The working folder (`.rayohx-<hash>` beside the output, or inside `workspace_dir`) holds a small state file with a fingerprint of the playlist (ignoring query strings), the next segment and the bytes written. It is saved atomically every 16 segments or 2 seconds, and when a download stops. A later run with the same address and output continues after the last durable segment, reuses staged segments, and discards state that does not match the stream. Turning `resume` off ignores and removes it. A lock prevents two downloads from using one folder.
+
+**Cleanup.** After a success nothing is left but the output. After a failure or cancellation only what resuming needs remains: the state, the partial file, and staged segments. With `resume` off or `keep_state_on_failure` off, nothing is left.
+
+**Encryption.** Plain AES-128 is decrypted, with the IV from the playlist or the segment's sequence number. Keys come through the HTTP layer and are cached. Initialization sections are treated as unencrypted. SAMPLE-AES and DRM key formats are refused before anything is downloaded; encrypted segments are not DRM support. Live streams (no `#EXT-X-ENDLIST`) are refused.
+
+**Events.** `SEGMENT_STARTED`, `SEGMENT_COMPLETED`, `SEGMENT_FAILED` and `DOWNLOAD_PROGRESS` (at most four a second) go to the `EventBus`. Progress carries bytes downloaded and written, estimated total, current and average speed, ETA, active workers, and storage figures including peak temporary use.
