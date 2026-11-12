@@ -45,6 +45,7 @@ from rayohx.errors import (
 )
 from rayohx.events import DownloadEvent, DownloadStateMachine, EventBus
 from rayohx.greetings import Greeting, GreetingNotFoundError, GreetingStore
+from rayohx.inspection import PlaylistFetcher, inspect_playlist
 from rayohx.logs import configure_logging
 from rayohx.models import (
     AudioTrack,
@@ -65,6 +66,8 @@ from rayohx.models import (
     Variant,
     VideoTrack,
 )
+from rayohx.playlist import is_hls_playlist, parse_playlist
+from rayohx.selection import StreamSelection, select_stream
 
 __all__ = [
     "AudioTrack",
@@ -107,6 +110,7 @@ __all__ = [
     "OutputInfo",
     "Playlist",
     "PlaylistError",
+    "PlaylistFetcher",
     "PlaylistNotFoundError",
     "ProxyConfig",
     "RayoHXError",
@@ -120,6 +124,7 @@ __all__ = [
     "StorageConfig",
     "StorageMetrics",
     "StorageStrategy",
+    "StreamSelection",
     "SubtitleTrack",
     "UnsupportedPlaylistError",
     "Variant",
@@ -127,4 +132,8 @@ __all__ = [
     "__version__",
     "configure_logging",
     "greet",
+    "inspect_playlist",
+    "is_hls_playlist",
+    "parse_playlist",
+    "select_stream",
 ]

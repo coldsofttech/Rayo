@@ -1,0 +1,5 @@
+#EXTM3U
+#EXT-X-DEFINE:NAME="host",VALUE="cdn.example.com"
+#EXT-X-TARGETDURATION:6
+#EXTINF:6.0,
+https://{$host}/a.ts

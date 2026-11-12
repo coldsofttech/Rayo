@@ -1,0 +1,13 @@
+#EXTM3U
+#EXT-X-TARGETDURATION:6
+#EXTINF:6.0,
+../shared/a.ts
+#EXTINF:6.0,
+/root/b.ts
+#EXTINF:6.0,
+//other.example.org/c.ts
+#EXTINF:6.0,
+?part=4
+#EXTINF:6.0,
+dir/sub/../d.ts?x=1&y=2
+#EXT-X-ENDLIST

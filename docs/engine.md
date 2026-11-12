@@ -40,11 +40,14 @@ Modules are added phase by phase under `src/rayohx/`. The first group exists; th
 | `models` | Frozen dataclasses for playlists, tracks, segments, requests, progress and results |
 | `config` | `DownloadConfig`, `NetworkConfig`, `ProxyConfig`, `OutputConfig`, `StorageConfig`, `SelectionConfig` |
 | `errors` | The `RayoHXError` hierarchy |
+| `playlist` | The HLS parser for master and media playlists |
+| `selection` | Choosing the variant, audio and subtitle tracks |
+| `inspection` | `inspect_playlist`, which looks at a stream without downloading it |
 | `events` | The download state machine and the `EventBus` |
 | `redaction` | Hides secrets in URLs, headers and text |
 | `logs` | Standard `logging` setup with a redaction filter |
 
-Still to come: `playlist`, `selection`, `http`, `storage`, `scheduler`, `crypto`, `output`.
+Still to come: `http`, `storage`, `scheduler`, `crypto`, `output`.
 
 ## Conventions
 
@@ -71,3 +74,32 @@ RayoHX remuxes and never transcodes. When no route exists, it raises `OutputForm
 ## Licensing
 
 Every runtime dependency must be permissively licensed (MIT, BSD, Apache-2.0 and similar). CI runs `pip-licenses` and fails on any GPL-family license. PyInstaller, which is GPL-2.0 with a bootloader exception that permits bundling commercial applications, is only an installer-build tool and is not a runtime dependency. Do not copy code from GPL, LGPL or AGPL projects such as FFmpeg, Bento4 or GPAC; implement from the specifications instead.
+
+## Playlists and selection
+
+**Parsing.** `parse_playlist(text, uri)` reads a master or media playlist and returns the typed models, with every address made absolute using RFC 3986 rules against the playlist's own (final) address.
+
+- A playlist is recognised by its `#EXTM3U` header, never by its file name or address.
+- Tags the parser does not know are skipped, so newer playlists keep working.
+- Errors name the line. A web page or other non-playlist gets a hint to check the address, headers and cookies.
+- Playlist variables (`EXT-X-DEFINE`) and I-frame-only playlists are refused with `UnsupportedPlaylistError`, because ignoring them would produce wrong addresses or wrong video.
+- Segments and playlists must be `http` or `https`. Key addresses may use another scheme so that a SAMPLE-AES or DRM playlist can still be inspected. The key is marked unsupported and the download refuses it later.
+- A key without an `IV` keeps `iv=None`. The decrypting phase derives it from the segment's `sequence_number`, as the HLS specification says.
+- `EXT-X-BYTERANGE` ranges without an offset are resolved against the previous range of the same file.
+- The container (MPEG-TS, fMP4, WebVTT) is guessed from the playlist. When it is unclear it stays `UNKNOWN` and the first bytes of a segment settle it.
+
+**Inspecting.** `inspect_playlist(url, fetcher)` downloads no media. The fetcher is any object with `fetch_text(url)`, which returns the text and its final address after redirects. The HTTP layer will provide the real one, which is why the function takes a fetcher for now.
+
+**Selecting.** `select_stream(master, config)` is a pure function, so the same playlist and settings always give the same answer. If a wish cannot be met, the closest track is used and a note says why.
+
+| Setting | Behavior |
+| --- | --- |
+| `quality="best"` | Largest picture, then bandwidth, average bandwidth, frame rate and codec support. Equal streams: the first listed. |
+| `quality="worst"` | The smallest picture, then the lowest bandwidth. |
+| `quality="1080p"` | The best stream at or below that size. If every stream is larger, the smallest one. |
+| `quality="auto"` | Like `1080p`: sharp without the cost of the largest stream. |
+| `max_resolution`, `max_bitrate` | Limits applied before the quality choice. If nothing fits, the smallest stream is used. A stream that does not state its size is never ruled out by a size limit. |
+| `audio_languages`, `audio_names` | One track per entry, in the order given. If none is found, the default audio track is used. `en` matches `en-US`, but `en-US` does not match `en-GB`. |
+| `subtitle_languages`, `subtitle_names` | Subtitles are off by default. A missing language selects nothing and adds a note. |
+
+Picture size is the shorter side, so a 720x1280 portrait stream counts as 720p. Audio-only streams are skipped when video streams exist. Forced tracks are chosen only when nothing else matches or when asked for by name.

@@ -1,0 +1,7 @@
+#EXTM3U
+#EXT-X-TARGETDURATION:6
+#EXTINF:6.0,
+https://cdn.example.net/video/seg-1.ts
+#EXTINF:6.0,
+http://cdn2.example.net:8080/video/seg-2.ts?auth=abc
+#EXT-X-ENDLIST

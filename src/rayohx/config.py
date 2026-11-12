@@ -251,10 +251,14 @@ class SelectionConfig:
     max_resolution: str | None = None
     #: Highest bandwidth in bits per second.
     max_bitrate: int | None = None
-    #: Audio languages in order of preference. Empty means the stream's default track.
+    #: Audio languages to download, one track each, in order of preference. If none is available
+    #: the stream's default track is used. Empty means the default track.
     audio_languages: tuple[str, ...] = ()
-    #: Subtitle languages in order of preference. Empty means no subtitles.
+    #: Subtitle languages to download, one track each. Empty means no subtitles.
     subtitle_languages: tuple[str, ...] = ()
+    #: Exact track names to download (as shown by ``inspect``), matched ignoring case.
+    audio_names: tuple[str, ...] = ()
+    subtitle_names: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not _QUALITY.match(self.quality):
@@ -277,6 +281,11 @@ class SelectionConfig:
                 if not _LANGUAGE.match(language):
                     raise ConfigurationError(f"{language!r} is not a valid language code.")
             object.__setattr__(self, name, values)
+        for name in ("audio_names", "subtitle_names"):
+            names = tuple(getattr(self, name))
+            if any(not item.strip() for item in names):
+                raise ConfigurationError("Track names must not be empty.")
+            object.__setattr__(self, name, names)
 
     def as_dict(self) -> dict[str, Any]:
         """A serializable view."""
@@ -286,6 +295,8 @@ class SelectionConfig:
             "max_bitrate": self.max_bitrate,
             "audio_languages": list(self.audio_languages),
             "subtitle_languages": list(self.subtitle_languages),
+            "audio_names": list(self.audio_names),
+            "subtitle_names": list(self.subtitle_names),
         }
 
 
