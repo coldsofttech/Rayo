@@ -81,6 +81,11 @@ from rayohx.output import OutputPlan, plan_output
 from rayohx.playlist import is_hls_playlist, parse_playlist
 from rayohx.ratelimit import RateLimiter
 from rayohx.selection import StreamSelection, select_stream
+from rayohx.serialization import (
+    playlist_to_dict,
+    progress_to_dict,
+    result_to_dict,
+)
 from rayohx.sinks import FileSink, OutputSink, StreamSink
 from rayohx.state import ResumeState, StateFile
 
@@ -173,5 +178,8 @@ __all__ = [
     "is_hls_playlist",
     "parse_playlist",
     "plan_output",
+    "playlist_to_dict",
+    "progress_to_dict",
+    "result_to_dict",
     "select_stream",
 ]

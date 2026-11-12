@@ -4,10 +4,10 @@
 Used by .github/workflows/release.yml; everything comes from pyproject.toml, uv.lock and the
 CHANGELOG, so renaming the project needs no edit here.
 
-    name                                              the command and package name (rayohx-cli)
+    name                                              the command and package name (rayohx)
     notes    --version 0.1.0                          the CHANGELOG section, for the release notes
-    homebrew --version 0.1.0 --sdist-sha256 HEX --out Formula/rayohx-cli.rb
-    scoop    --version 0.1.0 --zip-sha256 HEX --repo owner/name --out bucket/rayohx-cli.json
+    homebrew --version 0.1.0 --sdist-sha256 HEX --out Formula/rayohx.rb
+    scoop    --version 0.1.0 --zip-sha256 HEX --repo owner/name --out bucket/rayohx.json
 
 The Homebrew formula installs the PyPI source distribution in a virtualenv, with one resource per
 runtime dependency (url and sha256 taken from uv.lock) plus the build backend, because Homebrew

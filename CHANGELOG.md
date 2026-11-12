@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- The `rayohx` command: `rayohx info URL` shows a stream's qualities and tracks, and `rayohx download URL` saves it, with progress, `--json` output, settings from a file or `RAYOHX_` environment variables, and clear exit codes.
 - `download(url, output)` downloads a stream to a file in one call, checks the result and reports progress, and a cancelled download returns a result instead of an error.
 - MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`; a name that does not match is refused instead of mislabelling the file.
 - Streams whose audio is a separate track are joined into one MP4 automatically, in the language chosen, and MPEG-TS streams can be saved as MP4. The re-wrapping is built in and nothing is re-encoded.
@@ -23,5 +24,6 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The command is now `rayohx` (`rayohx-cli` still works); the placeholder `hello` command is gone.
 - The library is now imported as `rayohx`.
 - A license check in CI blocks GPL and AGPL dependencies.

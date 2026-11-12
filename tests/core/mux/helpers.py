@@ -304,6 +304,7 @@ class Site:
     def __init__(self, files: dict[str, bytes] | None = None) -> None:
         self.files = dict(files or {})
         self.log: list[str] = []
+        self.requests: list[object] = []
         self.fail: set[str] = set()
 
     def __call__(self, request):  # type: ignore[no-untyped-def]
@@ -311,6 +312,7 @@ class Site:
 
         path = request.url.path.lstrip("/")
         self.log.append(path)
+        self.requests.append(request)
         if path in self.fail:
             return httpx.Response(500)
         if path in self.files:

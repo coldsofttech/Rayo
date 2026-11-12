@@ -7,7 +7,7 @@ body:
     attributes:
       label: Which part is affected?
       options:
-        - Command line (rayohx-cli)
+        - Command line (rayohx)
         - API
         - UI window (rayohx-ui)
         - Not sure

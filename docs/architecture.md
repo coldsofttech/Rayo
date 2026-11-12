@@ -55,7 +55,7 @@ flowchart LR
 
 - `rayohx_cli` parses arguments with Typer, calls `rayohx`, and writes all output through the shared Rich consoles: data to stdout, messages and errors to stderr.
 - `rayohx` holds the logic. It raises exceptions instead of printing or exiting, so other front ends can reuse it.
-- The console script `rayohx-cli` and `python -m rayohx_cli` both enter through `rayohx_cli.cli:app`. Both packages ship in one wheel and share the version in `rayohx.__version__`.
+- The console script `rayohx` and `python -m rayohx_cli` both enter through `rayohx_cli.cli:app`. Both packages ship in one wheel and share the version in `rayohx.__version__`.
 
 ## UI and API layers
 

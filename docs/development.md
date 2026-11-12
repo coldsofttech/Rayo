@@ -16,7 +16,7 @@ pyproject.toml         metadata, dependencies and tool configuration
 uv.lock                locked dependencies (commit this file)
 ```
 
-The example names are `rayohx` (library), `rayohx_cli` (command line package), `rayohx_api`, `rayohx_ui`, and the commands `rayohx-cli` and `rayohx-ui`. After creating a repo from this template, run the **Init** workflow with a short lowercase `name` (for example `acme`) and a display `title` (for example "Acme Studio"). It opens a pull request that:
+The example names are `rayohx` (library), `rayohx_cli` (command line package), `rayohx_api`, `rayohx_ui`, and the commands `rayohx` and `rayohx-ui`. After creating a repo from this template, run the **Init** workflow with a short lowercase `name` (for example `acme`) and a display `title` (for example "Acme Studio"). It opens a pull request that:
 
 - replaces the owner and repository name;
 - renames the packages (`acme_package`, `acme_cli`, `acme_api`, `acme_ui`), the commands (`acme-cli`, `acme-ui`), the settings prefix (`ACME_API_`) and the app id, and replaces "RayoHX" with your title;

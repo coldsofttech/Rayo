@@ -123,7 +123,7 @@ jobs:
         run: |
           sudo apt-get install --yes ./dist/installer/*.deb
           "$CLI_NAME" --version
-          "$CLI_NAME" hello Ada
+          "$CLI_NAME" download --help > /dev/null
           sudo apt-get remove --yes "$CLI_NAME"
           hash -r  # the shell remembers where it ran the command from; forget that before checking
           if command -v "$CLI_NAME"; then echo "$CLI_NAME is still installed"; exit 1; fi
@@ -133,7 +133,7 @@ jobs:
           docker run --rm --env CLI_NAME --volume "$PWD/dist/installer:/pkgs:ro" fedora:latest bash -euxc '
             dnf install --assumeyes /pkgs/*.rpm
             "$CLI_NAME" --version
-            "$CLI_NAME" hello Ada
+            "$CLI_NAME" download --help > /dev/null
             dnf remove --assumeyes "$CLI_NAME"
             hash -r
             if command -v "$CLI_NAME"; then echo "$CLI_NAME is still installed"; exit 1; fi

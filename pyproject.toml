@@ -34,6 +34,8 @@ dependencies = [
 ]
 
 [project.scripts]
+rayohx = "rayohx_cli.cli:run"
+# The old name keeps working for people who installed the template version.
 rayohx-cli = "rayohx_cli.cli:run"
 
 [project.urls]
@@ -75,7 +77,7 @@ installer = [
 # it has no script: ui is its executable name and ui-target the function it runs. api is the API
 # package.
 [tool.installer]
-cli = "rayohx-cli"
+cli = "rayohx"
 ui = "rayohx-ui"
 ui-target = "rayohx_ui.__main__:main"
 api = "rayohx_api"

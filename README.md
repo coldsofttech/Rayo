@@ -46,7 +46,7 @@ A ready-to-use starting point for public Python tools that come with a command l
 
 ## Installation
 
-The Python package gives you the command line (`rayohx-cli`). Requires Python 3.11 or newer. The recommended way to install a tool is in its own isolated environment:
+The Python package gives you the command line (`rayohx`). Requires Python 3.11 or newer. The recommended way to install a tool is in its own isolated environment:
 
 ```bash
 uv tool install RayoHX
@@ -70,13 +70,13 @@ The window needs Windows 10 or 11 with the Microsoft Edge WebView2 runtime, whic
 
 ## Usage
 
-```console
-$ rayohx-cli hello Ada
-Hello, Ada!
-$ rayohx-ui
+```bash
+rayohx info https://example.com/master.m3u8
+rayohx download https://example.com/master.m3u8 -o movie.mp4
+rayohx-ui
 ```
 
-`rayohx-ui` opens the app window. `rayohx-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
+`rayohx info` lists the qualities and tracks of a stream, and `rayohx download` saves it (see the [command line guide](docs/cli.md)). `rayohx-ui` opens the app window. `rayohx-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
 
 ## Downloading a stream from Python
 

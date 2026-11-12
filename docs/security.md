@@ -39,6 +39,7 @@ When run alone (`python -m rayohx_api`), Cornea is absent, so the API protects i
 - **Untrusted media:** the demuxer and codec parsers read untrusted data, so every length and count is checked against the data actually present, and malformed headers raise a clear error instead of reading past the end. Buffered data waiting for another track is capped at 64 MiB.
 - **No DRM claim:** only plain AES-128 is decrypted. SAMPLE-AES and DRM key formats are refused before downloading.
 - **Files:** an existing output file is never replaced unless `overwrite` is on. Output is written to a `.part` file and renamed only when complete.
+- **Command line:** `--header`, `--cookie` and the other options that take values accept `@file`, so secrets need not appear in shell history or the process list. Addresses, log lines (including `--log-file`) and error output are redacted, and a traceback is shown only with `--verbose` and never with local variables. A settings file with an unknown key is refused. `--insecure` turns certificate checks off and logs a warning each time.
 
 ## Supply chain
 

@@ -10,3 +10,9 @@
 *.gif binary
 *.ico binary
 *.pdf binary
+
+# Media fixtures are binary (.ts is MPEG-TS here, not TypeScript).
+tests/fixtures/media/**/*.ts binary
+tests/fixtures/media/*.ts binary
+tests/fixtures/media/**/*.mp4 binary
+tests/fixtures/media/**/*.m4s binary

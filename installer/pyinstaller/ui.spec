@@ -2,7 +2,7 @@
 #
 # Two executables in one folder, sharing one lib/ (the Python runtime and every dependency):
 #
-#   rayohx-cli.exe   the command line (console)
+#   rayohx.exe   the command line (console)
 #   rayohx-ui.exe    the desktop window (no console); the React frontend (rayohx_ui/ui/dist)
 #                     is frozen into lib/
 #

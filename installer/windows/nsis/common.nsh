@@ -4,7 +4,7 @@
 ;
 ;   GUID          stable id of the product (upgrades replace an earlier install), "{...}"
 ;   MAIN_EXE      the program the Start Menu shortcut starts, e.g. "rayohx-ui.exe"
-;   EXTRA_EXE     optional second program shipped in the same folder, e.g. "rayohx-cli.exe"
+;   EXTRA_EXE     optional second program shipped in the same folder, e.g. "rayohx.exe"
 ;   HAS_PATH      optional: offer to add the install folder to PATH (command line product)
 ;   HAS_DESKTOP   optional: offer a desktop shortcut and "run now" (window product)
 ;
@@ -12,8 +12,8 @@
 ;
 ;   APP_NAME      product name; also the Start Menu folder and the default install folder
 ;   APP_VERSION   e.g. 0.1.0 (APP_VERSION_NUMERIC "0.1.0.0" is derived if not given)
-;   SOURCE_DIR    the PyInstaller folder to install (build/installer/rayohx-cli)
-;   OUT_FILE      the installer to write (e.g. dist/rayohx-cli-0.1.0-setup.exe)
+;   SOURCE_DIR    the PyInstaller folder to install (build/installer/rayohx)
+;   OUT_FILE      the installer to write (e.g. dist/rayohx-0.1.0-setup.exe)
 ;   PUBLISHER, URL, ICON_FILE (.ico), LICENSE_FILE   optional
 ;   HEADER_IMAGE (.bmp, 150x57), WELCOME_IMAGE (.bmp, 164x314)   optional, from brand/
 ;   USER_DATA_DIR optional: folder with settings and data; the uninstaller asks before removing it

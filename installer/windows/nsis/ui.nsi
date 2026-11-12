@@ -1,4 +1,4 @@
-; NSIS installer for the desktop app (rayohx-ui, with rayohx-cli beside it). Windows only; see
+; NSIS installer for the desktop app (rayohx-ui, with rayohx beside it). Windows only; see
 ; common.nsh for the options.
 ;
 ;   makensis /DAPP_NAME="RayoHX" /DAPP_VERSION=0.1.0 /DSOURCE_DIR=..\..\build\installer\rayohx-ui \
@@ -9,7 +9,7 @@
 ; older install. Generate a new one for your project (python -c "import uuid; print(uuid.uuid4())").
 !define GUID "{13C161C2-BD1D-4ACB-A31C-F9D1BC7B3DDA}"
 !define MAIN_EXE "rayohx-ui.exe"
-!define EXTRA_EXE "rayohx-cli.exe"
+!define EXTRA_EXE "rayohx.exe"
 !define HAS_DESKTOP
 
 !include "common.nsh"
