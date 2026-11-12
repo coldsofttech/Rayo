@@ -29,6 +29,9 @@ _HEADER_NAME = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
 _QUALITY = re.compile(r"^(best|worst|auto|\d{3,4}p)$", re.IGNORECASE)
 _LANGUAGE = re.compile(r"^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
 _RESOLUTION = re.compile(r"^\d{3,4}p$", re.IGNORECASE)
+_HOSTNAME = re.compile(
+    r"^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$"
+)
 
 
 def validate_url(url: str, *, name: str = "url") -> str:
@@ -122,8 +125,20 @@ class NetworkConfig:
     proxy: ProxyConfig | None = None
     #: Cap on download speed in bytes per second across all workers; ``None`` means no cap.
     rate_limit: int | None = None
+    #: Hosts, besides the one the download starts from, that may receive credentials
+    #: (``Authorization``, ``Cookie`` and other secret headers). Other hosts get none of them.
+    credential_hosts: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        for host in self.credential_hosts:
+            if not _HOSTNAME.match(host):
+                raise ConfigurationError(
+                    f"{host!r} is not a valid host name.",
+                    hint="Give a bare host such as cdn.example.com, without scheme or path.",
+                )
+        object.__setattr__(
+            self, "credential_hosts", tuple(host.lower() for host in self.credential_hosts)
+        )
         for name, value in self.headers.items():
             if not _HEADER_NAME.match(name):
                 raise ConfigurationError(f"{name!r} is not a valid header name.")
@@ -172,6 +187,7 @@ class NetworkConfig:
             "verify_tls": verify,
             "proxy": self.proxy.as_dict() if self.proxy else None,
             "rate_limit": self.rate_limit,
+            "credential_hosts": list(self.credential_hosts),
         }
 
 

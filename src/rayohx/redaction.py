@@ -30,7 +30,7 @@ _KEYWORD = re.compile(
 )
 
 
-def _is_sensitive_name(name: str) -> bool:
+def is_sensitive_name(name: str) -> bool:
     lowered = name.lower()
     return (
         lowered in SENSITIVE_HEADERS
@@ -53,7 +53,7 @@ def redact_url(url: str) -> str:
         pairs = []
         for pair in query.split("&"):
             name, sep, _value = pair.partition("=")
-            pairs.append(f"{name}={REDACTED}" if sep and _is_sensitive_name(name) else pair)
+            pairs.append(f"{name}={REDACTED}" if sep and is_sensitive_name(name) else pair)
         query = "&".join(pairs)
     scheme = f"{parts.scheme}:" if parts.scheme else ""
     prefix = f"{scheme}//{netloc}" if netloc else scheme
@@ -67,9 +67,7 @@ def redact_url(url: str) -> str:
 
 def redact_headers(headers: Mapping[str, str]) -> dict[str, str]:
     """Return a copy of ``headers`` with sensitive values replaced."""
-    return {
-        name: REDACTED if _is_sensitive_name(name) else value for name, value in headers.items()
-    }
+    return {name: REDACTED if is_sensitive_name(name) else value for name, value in headers.items()}
 
 
 def redact_text(text: str) -> str:

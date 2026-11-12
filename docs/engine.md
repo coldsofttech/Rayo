@@ -43,11 +43,14 @@ Modules are added phase by phase under `src/rayohx/`. The first group exists; th
 | `playlist` | The HLS parser for master and media playlists |
 | `selection` | Choosing the variant, audio and subtitle tracks |
 | `inspection` | `inspect_playlist`, which looks at a stream without downloading it |
+| `http_client` | `HttpClient`: the only code that makes network requests |
+| `ratelimit` | A speed limit shared by all workers |
+| `cancellation` | `CancellationToken` for cooperative cancellation |
 | `events` | The download state machine and the `EventBus` |
 | `redaction` | Hides secrets in URLs, headers and text |
 | `logs` | Standard `logging` setup with a redaction filter |
 
-Still to come: `http`, `storage`, `scheduler`, `crypto`, `output`.
+Still to come: `storage`, `scheduler`, `crypto`, `output`.
 
 ## Conventions
 
@@ -88,7 +91,7 @@ Every runtime dependency must be permissively licensed (MIT, BSD, Apache-2.0 and
 - `EXT-X-BYTERANGE` ranges without an offset are resolved against the previous range of the same file.
 - The container (MPEG-TS, fMP4, WebVTT) is guessed from the playlist. When it is unclear it stays `UNKNOWN` and the first bytes of a segment settle it.
 
-**Inspecting.** `inspect_playlist(url, fetcher)` downloads no media. The fetcher is any object with `fetch_text(url)`, which returns the text and its final address after redirects. The HTTP layer will provide the real one, which is why the function takes a fetcher for now.
+**Inspecting.** `inspect_playlist(url, fetcher)` downloads no media. The fetcher is any object with `fetch_text(url)`, which returns the text and its final address after redirects. `HttpClient` is the real one. `inspect(url, network_config)` wires them together.
 
 **Selecting.** `select_stream(master, config)` is a pure function, so the same playlist and settings always give the same answer. If a wish cannot be met, the closest track is used and a note says why.
 
@@ -103,3 +106,25 @@ Every runtime dependency must be permissively licensed (MIT, BSD, Apache-2.0 and
 | `subtitle_languages`, `subtitle_names` | Subtitles are off by default. A missing language selects nothing and adds a note. |
 
 Picture size is the shorter side, so a 720x1280 portrait stream counts as 720p. Audio-only streams are skipped when video streams exist. Forced tracks are chosen only when nothing else matches or when asked for by name.
+
+## Network layer
+
+`HttpClient` (built on `httpx`) is the only place that makes requests. It is safe to share between worker threads and reuses connections.
+
+| Area | Behavior |
+| --- | --- |
+| Timeouts | `connect_timeout` and `read_timeout` apply to each step. `total_timeout` caps one call, retries included. |
+| Retries | `retries` more attempts after a connection failure, timeout, HTTP 408, 425, 429 or 5xx, a web page served as media, an empty body, or a body cut short. The wait grows as `backoff_factor * 2^n` with a little random spread. `Retry-After` is obeyed up to 60 seconds. |
+| Not retried | Other 4xx answers, a refused certificate, a server that ignores a byte range, a response over the size limit, and an expired overall limit. |
+| Redirects | Followed one hop at a time, up to `max_redirects`. Only `http` and `https` targets are accepted. |
+| Validation | Media must not be a web page (checked by content type and by content), must not be empty, must match `Content-Length`, and a ranged request must get exactly the range it asked for. |
+| Speed limit | `rate_limit` is shared by all workers. |
+| Cancellation | A `CancellationToken` stops waiting, retrying and reading between chunks. |
+| TLS | Verified by default. `verify_tls` can be off or a CA file. |
+| Proxy | HTTP and HTTPS proxies, with credentials sent as proxy authentication. Environment variables such as `HTTPS_PROXY` are not read; settings come only from the configuration. |
+
+**Credentials stay with their host.** Secret headers (`Authorization`, `Cookie`, API keys, anything with token or secret in its name) and the configured cookies are sent to the host the download started from and to `credential_hosts`. A redirect or a segment on another host gets `Referer`, `Origin`, `User-Agent` and other plain headers, but none of the secrets. Cookies the server sets are not stored.
+
+**Address guard.** `HttpClient(url_guard=...)` is called with every address, redirect targets included, and can refuse it. A server deployment can use it to block private networks without changing the engine.
+
+Compressed responses are accepted for playlists. Media is requested uncompressed so sizes can be checked.

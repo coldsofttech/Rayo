@@ -29,6 +29,9 @@ When run alone (`python -m rayohx_api`), Cornea is absent, so the API protects i
 - **Redaction:** URLs (user info and values of keys such as `token`, `sig`, `key`), `Authorization`, `Cookie` and proxy credentials are hidden in log records and error messages by `rayohx.redaction`. Every exception message and every handler added by `configure_logging` goes through it, including formatted tracebacks.
 - **Settings:** `repr` and `as_dict()` of the settings leave out header values, cookie values and proxy passwords. Resume state must be built from `as_dict()`, never from the raw objects.
 - **Input checks:** download addresses must be absolute `http` or `https` URLs without control characters. Header names must be valid tokens, and header and cookie values cannot hold line breaks, which stops header injection. Proxies must be `http` or `https`.
+- **Credentials per host:** secret headers and configured cookies go only to the starting host and the hosts listed in `credential_hosts`, including across redirects. Redirect targets must be `http` or `https`.
+- **Network defaults:** TLS certificates are verified, and a warning is logged whenever verification is turned off. Proxy settings and environment variables such as `HTTPS_PROXY` are not read implicitly. Response sizes are limited (32 MiB for a playlist, 512 MiB for a single media request by default).
+- **Address guard:** every request address, including redirect targets, can be vetted by a `url_guard` function, which keeps server-side request forgery protection possible for future server use.
 - **Files:** an existing output file is never replaced unless `overwrite` is on.
 
 ## Supply chain

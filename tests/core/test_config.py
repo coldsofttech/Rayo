@@ -182,3 +182,12 @@ def test_selection_limits_and_languages() -> None:
         SelectionConfig(max_bitrate=0)
     with pytest.raises(ConfigurationError):
         SelectionConfig(subtitle_languages=("english!",))
+
+
+def test_credential_hosts_are_validated_and_lowercased() -> None:
+    network = NetworkConfig(credential_hosts=("CDN.Example.com", "localhost"))
+    assert network.credential_hosts == ("cdn.example.com", "localhost")
+    assert network.as_dict()["credential_hosts"] == ["cdn.example.com", "localhost"]
+    for bad in ("https://cdn.example.com", "cdn.example.com/path", "a b", "", "-bad.com"):
+        with pytest.raises(ConfigurationError, match="host name"):
+            NetworkConfig(credential_hosts=(bad,))

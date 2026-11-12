@@ -111,6 +111,7 @@ select = ["B", "C4", "E", "F", "I", "PT", "RUF", "S", "SIM", "T20", "UP", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "S603"]  # assert, subprocess and fake passwords are fine in tests
+"tests/core/integration/**" = ["SIM117"]  # the client is built from the running server's address
 "scripts/**" = ["S603", "S607", "T201"]  # scripts call the trusted gh CLI and print progress
 
 [tool.mypy]

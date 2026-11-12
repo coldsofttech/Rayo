@@ -58,21 +58,55 @@ class PlaylistNotFoundError(PlaylistError):
 class NetworkError(RayoHXError):
     """A request failed."""
 
+    _retryable_default = False
+
+    def __init__(
+        self, message: str, *, hint: str | None = None, retryable: bool | None = None
+    ) -> None:
+        super().__init__(message, hint=hint)
+        self._retryable = retryable
+
+    @property
+    def retryable(self) -> bool:
+        """Whether trying the same request again could succeed."""
+        return self._retryable_default if self._retryable is None else self._retryable
+
 
 class NetworkConnectionError(NetworkError):
     """The server could not be reached, or the connection broke."""
+
+    _retryable_default = True
 
 
 class NetworkTimeoutError(NetworkConnectionError):
     """A connect, read or overall timeout expired."""
 
 
+class TLSError(NetworkConnectionError):
+    """The secure connection failed, for example because the certificate is not trusted."""
+
+    _retryable_default = False
+
+
+class InvalidResponseError(NetworkError):
+    """The server answered, but not with what was asked for (a web page, nothing, too little)."""
+
+
 class HTTPError(NetworkError):
     """The server answered with an error status."""
 
-    def __init__(self, url: str, status_code: int, *, hint: str | None = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        status_code: int,
+        *,
+        hint: str | None = None,
+        retry_after: float | None = None,
+    ) -> None:
         self.url = redact_url(url)
         self.status_code = status_code
+        #: Seconds the server asked us to wait before trying again, when it said so.
+        self.retry_after = retry_after
         super().__init__(f"HTTP {status_code} for {self.url}", hint=hint)
 
     @property

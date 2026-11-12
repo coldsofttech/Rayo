@@ -59,3 +59,32 @@ def test_bad_addresses_never_reach_the_fetcher() -> None:
     with pytest.raises(ConfigurationError):
         inspect_playlist("file:///etc/passwd", fetcher)
     assert fetcher.requested == []
+
+
+def test_inspect_uses_the_http_layer(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+
+    from rayohx import HttpClient, NetworkConfig, PlaylistNotFoundError, inspect
+    from rayohx import inspection as module
+
+    text = fixture_text("master_basic.m3u8")
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        if request.url.path.endswith("missing.m3u8"):
+            return httpx.Response(404)
+        return httpx.Response(200, content=text.encode())
+
+    def factory(config: NetworkConfig, **options: object) -> HttpClient:
+        return HttpClient(config, transport=httpx.MockTransport(handler), **options)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(module, "HttpClient", factory)
+    playlist = inspect("https://example.com/v/master.m3u8", NetworkConfig(user_agent="Tester"))
+    assert isinstance(playlist, MasterPlaylist)
+    assert playlist.variants[0].uri == "https://example.com/v/360p/index.m3u8"
+    assert calls == ["https://example.com/v/master.m3u8"]
+    with pytest.raises(PlaylistNotFoundError):
+        inspect("https://example.com/v/missing.m3u8")
+    with pytest.raises(ConfigurationError):
+        inspect("not-a-url")

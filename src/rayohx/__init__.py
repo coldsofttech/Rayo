@@ -2,6 +2,7 @@
 
 __version__ = "0.1.0"
 
+from rayohx.cancellation import CancellationToken
 from rayohx.config import (
     DownloadConfig,
     NetworkConfig,
@@ -30,6 +31,7 @@ from rayohx.errors import (
     HTTPError,
     InsufficientStorageError,
     InvalidPlaylistError,
+    InvalidResponseError,
     InvalidStateTransitionError,
     NetworkConnectionError,
     NetworkError,
@@ -41,11 +43,13 @@ from rayohx.errors import (
     PlaylistNotFoundError,
     RayoHXError,
     SegmentDownloadError,
+    TLSError,
     UnsupportedPlaylistError,
 )
 from rayohx.events import DownloadEvent, DownloadStateMachine, EventBus
 from rayohx.greetings import Greeting, GreetingNotFoundError, GreetingStore
-from rayohx.inspection import PlaylistFetcher, inspect_playlist
+from rayohx.http_client import HttpClient, HttpResponse
+from rayohx.inspection import PlaylistFetcher, inspect, inspect_playlist
 from rayohx.logs import configure_logging
 from rayohx.models import (
     AudioTrack,
@@ -67,12 +71,14 @@ from rayohx.models import (
     VideoTrack,
 )
 from rayohx.playlist import is_hls_playlist, parse_playlist
+from rayohx.ratelimit import RateLimiter
 from rayohx.selection import StreamSelection, select_stream
 
 __all__ = [
     "AudioTrack",
     "AuthenticationError",
     "CancellationError",
+    "CancellationToken",
     "ConfigurationError",
     "ContainerFormat",
     "DownloadConfig",
@@ -92,9 +98,12 @@ __all__ = [
     "GreetingNotFoundError",
     "GreetingStore",
     "HTTPError",
+    "HttpClient",
+    "HttpResponse",
     "InitMap",
     "InsufficientStorageError",
     "InvalidPlaylistError",
+    "InvalidResponseError",
     "InvalidStateTransitionError",
     "MasterPlaylist",
     "MediaPlaylist",
@@ -113,6 +122,7 @@ __all__ = [
     "PlaylistFetcher",
     "PlaylistNotFoundError",
     "ProxyConfig",
+    "RateLimiter",
     "RayoHXError",
     "RemuxBackend",
     "Resolution",
@@ -126,12 +136,14 @@ __all__ = [
     "StorageStrategy",
     "StreamSelection",
     "SubtitleTrack",
+    "TLSError",
     "UnsupportedPlaylistError",
     "Variant",
     "VideoTrack",
     "__version__",
     "configure_logging",
     "greet",
+    "inspect",
     "inspect_playlist",
     "is_hls_playlist",
     "parse_playlist",

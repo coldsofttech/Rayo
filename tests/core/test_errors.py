@@ -89,3 +89,20 @@ def test_insufficient_storage_message_is_actionable() -> None:
 )
 def test_format_bytes(size: int, text: str) -> None:
     assert format_bytes(size) == text
+
+
+def test_network_errors_know_whether_a_retry_could_help() -> None:
+    assert errors.NetworkConnectionError("down").retryable
+    assert errors.NetworkTimeoutError("slow").retryable
+    assert not errors.NetworkTimeoutError("slow", retryable=False).retryable
+    assert not errors.TLSError("untrusted").retryable
+    assert not errors.NetworkError("odd").retryable
+    assert errors.InvalidResponseError("html", retryable=True).retryable
+    assert not errors.InvalidResponseError("html").retryable
+    assert issubclass(errors.TLSError, errors.NetworkConnectionError)
+    assert issubclass(errors.InvalidResponseError, errors.NetworkError)
+
+
+def test_http_error_remembers_how_long_the_server_asked_us_to_wait() -> None:
+    assert HTTPError("https://h/a", 429, retry_after=5.0).retry_after == 5.0
+    assert HTTPError("https://h/a", 500).retry_after is None
