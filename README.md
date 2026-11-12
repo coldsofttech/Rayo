@@ -78,6 +78,14 @@ rayohx-ui
 
 `rayohx info` lists the qualities and tracks of a stream, and `rayohx download` saves it (see the [command line guide](docs/cli.md)). `rayohx-ui` opens the app window. `rayohx-ui --no-window` prints an address you can open in a browser instead. On other systems it explains that the window needs Windows; the command line and the API work everywhere.
 
+## Docker
+
+```bash
+docker run --rm -v "$PWD/downloads:/output" ghcr.io/coldsofttech/rayohx download https://example.com/master.m3u8 -o /output/movie.mp4
+```
+
+The image is small, runs as a normal user and has folders for the output and for resuming. See the [Docker guide](docs/docker.md).
+
 ## Downloading a stream from Python
 
 ```python

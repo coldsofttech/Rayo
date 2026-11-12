@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- A Docker image for `linux/amd64` and `linux/arm64`: small, runs as a normal user, with folders for the output and for resuming. Publishing to GHCR stays off until `PUBLISH_GHCR` is set.
 - The `rayohx` command: `rayohx info URL` shows a stream's qualities and tracks, and `rayohx download URL` saves it, with progress, `--json` output, settings from a file or `RAYOHX_` environment variables, and clear exit codes.
 - `download(url, output)` downloads a stream to a file in one call, checks the result and reports progress, and a cancelled download returns a result instead of an error.
 - MPEG-TS streams are saved as `.ts` and fragmented MP4 streams as `.mp4`; a name that does not match is refused instead of mislabelling the file.

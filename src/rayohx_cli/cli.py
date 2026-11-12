@@ -12,9 +12,8 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from types import FrameType
-from typing import Annotated, NoReturn
+from typing import Annotated, Any, NoReturn
 
-import click
 import typer
 
 from rayohx import (
@@ -127,7 +126,7 @@ def main(
         path = find_config(config)
         if path is None:
             return
-        commands: Mapping[str, click.Command] = getattr(typer.main.get_command(app), "commands", {})
+        commands: Mapping[str, Any] = getattr(typer.main.get_command(app), "commands", {})
         known = {opt.name for command in commands.values() for opt in command.params if opt.name}
         loaded = load_config(path, known)
     except ConfigurationError as exc:

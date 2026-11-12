@@ -44,12 +44,13 @@ Secrets the command needs (a token, a certificate password) are added as reposit
 
 ## Package managers
 
-Each channel is off until you set its variable. All three need one secret, `PACKAGE_MANAGER_TOKEN`: a personal access token that can create repositories and open pull requests in the tap and bucket, and that can fork `microsoft/winget-pkgs`. Updates are always pull requests; nothing is pushed to a default branch.
+Each channel is off until you set its variable. Homebrew, Scoop and winget need one secret, `PACKAGE_MANAGER_TOKEN`: a personal access token that can create repositories and open pull requests in the tap and bucket, and that can fork `microsoft/winget-pkgs`. Updates are always pull requests; nothing is pushed to a default branch.
 
 | Variable | Channel | Notes |
 | --- | --- | --- |
 | `PUBLISH_HOMEBREW=true` | Homebrew (macOS and Linux) | `HOMEBREW_TAP_REPO`, default `<owner>/homebrew-tap` |
 | `PUBLISH_SCOOP=true` | Scoop (Windows) | `SCOOP_BUCKET_REPO`, default `<owner>/scoop-bucket` |
+| `PUBLISH_GHCR=true` | The Docker image on GHCR (`docker.yml`, see [docker.md](docker.md)) | none; uses the workflow's token |
 | `PUBLISH_WINGET=true` | winget (Windows) | `WINGET_IDENTIFIER`, for example `Publisher.Package`; `WINGET_INSTALLERS_REGEX` picks the setup (default: the command line's) |
 
 Set them under Settings > Secrets and variables > Actions.

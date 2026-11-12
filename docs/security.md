@@ -40,6 +40,7 @@ When run alone (`python -m rayohx_api`), Cornea is absent, so the API protects i
 - **No DRM claim:** only plain AES-128 is decrypted. SAMPLE-AES and DRM key formats are refused before downloading.
 - **Files:** an existing output file is never replaced unless `overwrite` is on. Output is written to a `.part` file and renamed only when complete.
 - **Command line:** `--header`, `--cookie` and the other options that take values accept `@file`, so secrets need not appear in shell history or the process list. Addresses, log lines (including `--log-file`) and error output are redacted, and a traceback is shown only with `--verbose` and never with local variables. A settings file with an unknown key is refused. `--insecure` turns certificate checks off and logs a warning each time.
+- **Docker image:** it runs as an unprivileged user (uid `10001`) with no login shell, holds only the two packages and their dependencies (no compilers, no pip, no FFmpeg), and publishes with provenance. Secrets are passed as mounted files, never baked into the image.
 
 ## Supply chain
 
